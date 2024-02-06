@@ -11,18 +11,20 @@
 #include <iostream>
 
 #include "argparser.hpp"
+#include <PQBlockchainExceptions.hpp>
 
-using namespace std;
 
 int main(int argc, char *argv[]){
 
     ArgParser *a = ArgParser::GetInstance(argc, argv);
 
     for(int i = 0; i < 10; i++){
-        cout << "round: " << i << endl;
+        std::cout << "round: " << i << std::endl;
     }
 
-    cout << "This is a node" << endl;
+    std::cout << "This is a node" << std::endl;
+
+    throw PQB::Exceptions::FirstExample("Hello exception");
 
     return 0;
 }

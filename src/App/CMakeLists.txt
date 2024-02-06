@@ -5,9 +5,10 @@
 add_executable(main main.cpp)
 
 # Link other libraries
-target_link_libraries(main PRIVATE ArgparserLib)
+target_link_libraries(main PRIVATE ArgparserLib PQBlockchainExceptionsLib)
 target_include_directories(main 
     PRIVATE ${CMAKE_SOURCE_DIR}/src/Argparser
+    PRIVATE ${CMAKE_SOURCE_DIR}/src
 )
 
 

@@ -32,8 +32,14 @@ run:
 ##################################################################
 
 ##
-# RUN TEST
+# RUN TEST/ALLTESTS
 
+test:
+	GTEST_COLOR=1 ctest -R $(ARGS) --test-dir build --output-on-failure -j12
+
+
+alltests:
+	GTEST_COLOR=1 ctest --test-dir build --output-on-failure -j12
 
 
 ##################################################################
