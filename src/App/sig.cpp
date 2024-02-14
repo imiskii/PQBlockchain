@@ -2,8 +2,9 @@
 
 
 #include <iostream>
-#include <stdlib.h>
 #include <string.h>
+
+#include "HexBase.hpp"
 
 extern "C"{
     #include <falcon1024.h>
@@ -15,7 +16,7 @@ using namespace std;
 int main(){
 
     int ok = 0;
-    char msg[] = "Secret message";
+    char msg[] = "Hi, this is a message!";
     size_t msg_size = (strlen(msg) * sizeof(uint8_t));
 
     // KEYGEN
@@ -26,7 +27,7 @@ int main(){
         return 1;
     }
 
-    uint8_t *pk = (uint8_t *) malloc(PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES);
+    uint8_t *pk = (uint8_t *) malloc(PQCLEAN_FALCON1024_CLEAN_CRYPTO_PUBLICKEYBYTES);
     if(pk == NULL){
         cerr << "pk memmory allocation failure!" << endl;
         return 1;
@@ -74,9 +75,13 @@ int main(){
     cout << "Message: " << msg << endl;
     cout << "Sig length: " << sig_len << endl; 
 
-    printf("pk: %X\n", *pk);
-    printf("sk: %X\n", *sk);
-    printf("sig: %X\n", *sig);
+    std::string hexSK = PQB::bytesToHexString(sk, PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES);
+    std::string hexPK = PQB::bytesToHexString(pk, PQCLEAN_FALCON1024_CLEAN_CRYPTO_PUBLICKEYBYTES);
+    std::string hexSignature = PQB::bytesToHexString(sig, sig_len);
+
+    std::cout << hexSK << std::endl << std::endl;
+    std::cout << hexPK << std::endl << std::endl;
+    std::cout << hexSignature << std::endl;
 
     // VERIFY altered message
 

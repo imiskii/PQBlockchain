@@ -95,9 +95,9 @@ public:
      *
      * @param argc number of program arguments
      * @param argv program arguments
-     * @return ArgParser* ArgParser class instance
+     * @return ArgParser& ArgParser class instance
      */
-    static ArgParser *GetInstance(int argc, char **argv);
+    static ArgParser& GetInstance(int argc, char **argv);
 
     /**
      * @brief Parse program arguments

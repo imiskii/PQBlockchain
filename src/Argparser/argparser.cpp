@@ -27,12 +27,9 @@ ArgParser::ArgParser(int argc, char **argv): _argCount(argc), _progArgs(argv)
     this->__parsed = false;
 }
 
-ArgParser *ArgParser::GetInstance(int argc, char **argv)
+ArgParser& ArgParser::GetInstance(int argc, char **argv)
 {
-    static ArgParser *__instance = nullptr;
-    if(__instance == nullptr){
-        __instance = new ArgParser(argc, argv);
-    }
+    static ArgParser __instance(argc,argv);
     return __instance;
 }
 

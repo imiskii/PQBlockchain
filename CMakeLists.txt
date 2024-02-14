@@ -23,6 +23,7 @@ include(CTest)
 # Global compile options
 add_compile_options(-Wall -Wextra -Wpedantic)
 
+
 # Include subdirectiories
 add_subdirectory(src)
 add_subdirectory(tests)
