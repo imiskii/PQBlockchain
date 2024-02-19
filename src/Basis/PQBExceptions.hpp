@@ -17,29 +17,38 @@
 namespace PQB::Exceptions{
 
 class FirstExample : public std::exception{
-private:
-    const char* msg;
 public:
-    FirstExample(const char* exceptionMessage) : msg(exceptionMessage) {}
+    FirstExample(const char* exceptionMessage) : m_msg(exceptionMessage) {}
     const char *what() const noexcept override{
-        return msg;
+        return m_msg;
     }
+private:
+    const char* m_msg;
 };
 
 
 class SignerEx : public std::exception{    
 public:
-
+    SignerEx(const char* exceptionMessage) : m_msg(exceptionMessage) {}
     const char *what() const noexcept override{
         return m_msg;
     }
 
-    SignerEx(const char* exceptionMessage) : m_msg(exceptionMessage) {}
 
 private:
     const char* m_msg;
 };
 
+
+class CommandInputEx : public std::exception{
+public:
+    CommandInputEx(const char* exceptionMessage) : m_msg(exceptionMessage) {}
+    const char* what() const noexcept override{
+        return m_msg;
+    }
+private:
+    const char* m_msg;
+};
 
 }
 

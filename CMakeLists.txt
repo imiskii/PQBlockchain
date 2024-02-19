@@ -23,6 +23,15 @@ include(CTest)
 # Global compile options
 add_compile_options(-Wall -Wextra -Wpedantic)
 
+# Debug flag
+option(ENABLE_DEBUG "Enable debug flags" OFF)
+if(ENABLE_DEBUG)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+endif()
+
+
+# include external libraries
+find_package(Curses REQUIRED)
 
 # Include subdirectiories
 add_subdirectory(src)

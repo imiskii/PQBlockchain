@@ -21,7 +21,10 @@ RM=$(DOXYGEN)/html *.zip build/*
 # MAKE & RUN
 
 configure:
-	cmake -S . -B build/
+	cmake -DENABLE_DEBUG=OFF -S . -B build/
+
+configureg:
+	cmake -DENABLE_DEBUG=ON -S . -B build/
 
 compile:
 	make -C build/
