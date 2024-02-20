@@ -27,7 +27,7 @@ configureg:
 	cmake -DENABLE_DEBUG=ON -S . -B build/
 
 compile:
-	make -C build/
+	make -C build/ -j12
 
 run:
 	$(EX) $(ARGS)

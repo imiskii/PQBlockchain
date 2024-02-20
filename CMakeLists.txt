@@ -24,10 +24,12 @@ include(CTest)
 # Global compile options
 add_compile_options(-Wall -Wextra -Wpedantic)
 
+
 # Debug flag
 option(ENABLE_DEBUG "Enable debug flags" OFF)
 if(ENABLE_DEBUG)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -g")
 endif()
 
 

@@ -48,6 +48,7 @@ _deps
 # My git ignores
 
 .vscode
+.idea
 build
 doc/doxygen/html
 doc/images/drawio
