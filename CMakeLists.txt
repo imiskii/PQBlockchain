@@ -17,6 +17,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_C_STANDARD 99)
 
 
+include(ExternalProject)
 include(CTest)
 
 
@@ -38,3 +39,4 @@ add_subdirectory(src)
 add_subdirectory(tests)
 
 add_subdirectory(extern)
+
