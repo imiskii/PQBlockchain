@@ -50,6 +50,18 @@ private:
     const char* m_msg;
 };
 
+
+class Storage : public std::exception{
+public:
+    Storage(const char* exceptionMessage) : m_msg(exceptionMessage) {}
+    const char* what() const noexcept override{
+        return m_msg;
+    }
+private:
+    const char* m_msg;
+};
+
+
 }
 
 

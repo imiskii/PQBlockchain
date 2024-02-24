@@ -27,8 +27,9 @@ class BlockHeader
 {
 public:
     uint32_t version;
-    byte64_t merkleRootHash;
+    byte64_t transactionsMerkleRootHash;
     byte64_t previousBlockHash;
+    byte64_t accountBalanceMerkleRootHash;
     PQB::timestamp timestamp;
     uint32_t size;
 
@@ -38,8 +39,9 @@ public:
 
     void setNull(){
         version = 0;
-        merkleRootHash.SetNull();
+        transactionsMerkleRootHash.SetNull();
         previousBlockHash.SetNull();
+        accountBalanceMerkleRootHash.SetNull();
         timestamp = 0;
         size = 0;
     }
@@ -79,8 +81,9 @@ public:
     BlockHeader getBlockHeader() const{
         BlockHeader hdr;
         hdr.version = version;
-        hdr.merkleRootHash = merkleRootHash;
+        hdr.transactionsMerkleRootHash = transactionsMerkleRootHash;
         hdr.previousBlockHash = previousBlockHash;
+        hdr.accountBalanceMerkleRootHash = accountBalanceMerkleRootHash;
         hdr.timestamp = timestamp;
         hdr.size = size;
         return hdr;

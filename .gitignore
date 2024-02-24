@@ -50,5 +50,6 @@ _deps
 .vscode
 .idea
 build
+tmp
 doc/doxygen/html
 doc/images/drawio
