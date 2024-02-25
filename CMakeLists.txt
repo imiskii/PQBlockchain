@@ -22,7 +22,7 @@ include(CTest)
 
 
 # Global compile options
-add_compile_options(-Wall -Wextra -Wpedantic)
+add_compile_options(-Wall -Wextra)
 
 
 # Debug flag
@@ -34,23 +34,7 @@ endif()
 
 
 # include external libraries
-# find_package(Curses REQUIRED)
-
-ExternalProject_Add(
-    RocksDB
-    PREFIX ${CMAKE_BINARY_DIR}/extern/RocksDB
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/extern/RocksDB
-    CONFIGURE_COMMAND ""
-    BUILD_IN_SOURCE true
-    BUILD_COMMAND make static_lib
-    INSTALL_COMMAND ""
-)
-
-set(RocksDB_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/RocksDB/include)
-set(RocksDB_LIB_DIR ${CMAKE_SOURCE_DIR}/extern/RocksDB)
-add_library(RocksDBLib STATIC IMPORTED)
-set_target_properties(RocksDBLib PROPERTIES IMPORTED_LOCATION ${RocksDB_LIB_DIR}/librocksdb.a)
-
+find_package(Curses REQUIRED)
 
 # Include subdirectiories
 add_subdirectory(src)

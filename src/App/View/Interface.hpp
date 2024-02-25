@@ -13,7 +13,7 @@
 
 #include <iostream>
 #include <string>
-//#include <ncurses.h>
+#include <ncurses.h>
 
 
 // ANSI escape codes for text colors
