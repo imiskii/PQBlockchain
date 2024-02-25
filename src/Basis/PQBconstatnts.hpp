@@ -15,7 +15,7 @@
 namespace PQB{
 
     /// @brief Location on the RocksDB databse
-    const char* DATABASE_PATH = "../../../tmp/rocksdb";
+    //const char* DATABASE_PATH = "../../../tmp/rocksdb";
     
 }
 

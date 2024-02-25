@@ -4,9 +4,6 @@
 [submodule "extern/cryptopp-cmake"]
 	path = extern/cryptopp-cmake
 	url = https://github.com/abdes/cryptopp-cmake.git
-[submodule "extern/gflags"]
-	path = extern/gflags
-	url = https://github.com/gflags/gflags.git
 [submodule "extern/RocksDB"]
 	path = extern/RocksDB
 	url = https://github.com/facebook/rocksdb.git

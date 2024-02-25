@@ -13,6 +13,7 @@
 
 #include <vector>
 #include <rocksdb/db.h>
+#include <rocksdb/options.h>
 #include <rocksdb/slice.h>
 
 #include <PQBconstatnts.hpp>
@@ -55,7 +56,7 @@ public:
     rocksdb::ColumnFamilyHandle* addressStorageHandle;
 
 private:
-    const char* databasePath = DATABASE_PATH; ///< location of database
+    const char* databasePath = "../../../tmp/rocksdb"; ///< location of database
     rocksdb::Options databaseInitializeOptions;
     rocksdb::DB* db; ///< Instance of RocksDB database
     std::vector<rocksdb::ColumnFamilyDescriptor> columnFamilies; ///< logical partitions of the database
