@@ -15,17 +15,7 @@ add_subdirectory(cryptopp-cmake)
 
 
 ##
-# RocksDB and gflags
-
-ExternalProject_Add(
-    gflags
-    PREFIX gflags
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/extern/gflags
-    CMAKE_ARGS -DBUILD_SHARED_LIBS=ON
-)
-
-ExternalProject_Add(
-    RocksDB
-    PREFIX RocksDB
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/extern/RocksDB
-)
+# LevelDB
+set(LEVELDB_BUILD_TESTS OFF)
+set(LEVELDB_BUILD_BENCHMARKS OFF)
+add_subdirectory(LevelDB)

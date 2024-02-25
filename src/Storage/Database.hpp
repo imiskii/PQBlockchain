@@ -12,8 +12,7 @@
 #pragma once
 
 #include <vector>
-#include <rocksdb/db.h>
-#include <rocksdb/slice.h>
+#include "leveldb/db.h"
 
 #include <PQBconstatnts.hpp>
 #include "Blob.hpp"
@@ -45,27 +44,21 @@ public:
      */
     void closeDatabase();
 
-    rocksdb::DB* getDatabase(){
+    leveldb::DB* getDatabase(){
         return db;
     }
 
-    // Handles for the database column families
-    rocksdb::ColumnFamilyHandle* blockStorageHandle;
-    rocksdb::ColumnFamilyHandle* accountStorageHandle;
-    rocksdb::ColumnFamilyHandle* addressStorageHandle;
-
 private:
     const char* databasePath = DATABASE_PATH; ///< location of database
-    rocksdb::Options databaseInitializeOptions;
-    rocksdb::DB* db; ///< Instance of RocksDB database
-    std::vector<rocksdb::ColumnFamilyDescriptor> columnFamilies; ///< logical partitions of the database
+    leveldb::Options databaseInitializeOptions;
+    leveldb::DB* db; ///< Instance of RocksDB database
 };
 
 
 class AccountBalancesStorage{
 public:
     
-    AccountBalancesStorage(rocksdb::DB* database, rocksdb::ColumnFamilyHandle* accountBalancesStorageHandler) : db(database), CFHandler(accountBalancesStorageHandler) {}
+    AccountBalancesStorage(leveldb::DB* database) : db(database){}
 
     /**
      * @brief Get the account balance
@@ -93,15 +86,14 @@ public:
     void updateBalancesByBlock(Block& block);
 
 private:
-    rocksdb::DB* db; ///< Instance of RocksDB database
-    rocksdb::ColumnFamilyHandle* CFHandler;
+    leveldb::DB* db; ///< Instance of RocksDB database
 };
 
 
 class BlocksStorage{
 public:
 
-    BlocksStorage(rocksdb::DB* database, rocksdb::ColumnFamilyHandle* blocksStorageHandler) : db(database), CFHandler(blocksStorageHandler) {}
+    BlocksStorage(leveldb::DB* database) : db(database) {}
 
     /**
      * @brief Get the block data from database
@@ -119,23 +111,21 @@ public:
     void saveBlock(Block& block);
 
 private:
-    rocksdb::DB* db; ///< Instance of RocksDB database
-    rocksdb::ColumnFamilyHandle* CFHandler; ///< blocks column family
+    leveldb::DB* db; ///< Instance of RocksDB database
 };
 
 
 class AccountAddressStorage{
 public:
 
-    AccountAddressStorage(rocksdb::DB* database, rocksdb::ColumnFamilyHandle* addressStorageHandler) : db(database), CFHandler(addressStorageHandler) {}
+    AccountAddressStorage(leveldb::DB* database) : db(database) {}
 
     void getAddress(byte64_t& accountID);
 
     void updateAddress(byte64_t& accountID, unsigned newAddress);
     
 private:
-    rocksdb::DB* db; ///< Instance of RocksDB database
-    rocksdb::ColumnFamilyHandle* CFHandler; ///< blocks column family
+    leveldb::DB* db; ///< Instance of RocksDB database
 };
 
 
