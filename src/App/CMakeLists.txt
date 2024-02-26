@@ -9,7 +9,7 @@ add_subdirectory(Model)
 add_executable(main main.cpp)
 
 # Link other libraries
-target_link_libraries(main PRIVATE ArgparserLib InterfaceLib ControllerLib StorageLib)
+target_link_libraries(main PRIVATE ArgparserLib InterfaceLib ControllerLib)
 
 
 ## KEM.cpp
