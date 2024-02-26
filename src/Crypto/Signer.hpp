@@ -47,7 +47,7 @@ public:
      * @param privateKey hexadecimal representation of the key to make the signature with
      * @return size_t length of the signature. In case of hybrid encryption only the length of the first signature!
      * 
-     * @exception PQB::Exceptions::SignerEx if private key is invalid
+     * @exception PQB::Exceptions::Signer if private key is invalid
      */
     virtual size_t sign(PQB::byteBuffer& signature, const PQB::byte* dataToSign, size_t dataSize, const PQB::byteBuffer& privateKey) = 0;
 

@@ -38,7 +38,7 @@ void Falcon1024::genKeys(PQB::byteBuffer &privateKey, PQB::byteBuffer &publicKey
 
     int ok = PQCLEAN_FALCON1024_CLEAN_crypto_sign_keypair(publicKey.data(), privateKey.data());
     if(ok){
-        throw PQB::Exceptions::SignerEx("Key generation: key generation failure!");
+        throw PQB::Exceptions::Signer("Key generation: key generation failure!");
     }
 }
 
@@ -48,7 +48,7 @@ size_t Falcon1024::sign(PQB::byteBuffer &signature, const PQB::byte *dataToSign,
 
     int ok = PQCLEAN_FALCON1024_CLEAN_crypto_sign_signature(signature.data(), &signatureLength, dataToSign, dataSize, privateKey.data());
     if(ok){
-        throw PQB::Exceptions::SignerEx("Signing: message signing failure!");
+        throw PQB::Exceptions::Signer("Signing: message signing failure!");
     }
 
     signature.resize(signatureLength);
@@ -83,7 +83,7 @@ size_t Ed25519::sign(PQB::byteBuffer& signature, const PQB::byte* dataToSign, si
 
     const CryptoPP::ed25519PrivateKey& sk = dynamic_cast<const CryptoPP::ed25519PrivateKey&>(signer.GetPrivateKey());
     if(!sk.Validate(prng, 3)){ // 3 is level of check validation (there are levels 1,2 and 3)
-        throw PQB::Exceptions::SignerEx("Signing: private key is not valid!");
+        throw PQB::Exceptions::Signer("Signing: private key is not valid!");
     }
 
     size_t signatureLength = signer.MaxSignatureLength();

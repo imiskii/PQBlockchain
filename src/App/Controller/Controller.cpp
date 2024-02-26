@@ -23,7 +23,7 @@ namespace PQB{
         try{
             command = __choseCommand(parsedCommand.at(0));
         }
-        catch(const PQB::Exceptions::CommandInputEx& e){
+        catch(const PQB::Exceptions::CommandInput& e){
             console->printErrorToConsole(e.what());
             return;
         }
@@ -48,7 +48,7 @@ namespace PQB{
         it = commandMap.find(command);
         if(it == commandMap.end()){
             std::string err = "Unknow command: '" + command + "'!";
-            throw PQB::Exceptions::CommandInputEx(err.c_str());
+            throw PQB::Exceptions::CommandInput(err.c_str());
         }
         return commandMap.at(command);
     }

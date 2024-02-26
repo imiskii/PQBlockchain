@@ -43,7 +43,7 @@ private:
      * 
      * @param command name of command
      * @return CommandCreator* specific Command creator for given command
-     * @exception CommandInputEx if command is not recognized
+     * @exception CommandInput if command is not recognized
      */
     CommandCreator* __choseCommand(std::string& command) const;
 
