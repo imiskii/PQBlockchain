@@ -14,50 +14,39 @@
 
 namespace PQB{
 
-    Database::Database(){
+    AccountBalancesStorage::AccountBalancesStorage(){
         db = nullptr;
-        databaseInitializeOptions.create_if_missing = true;
-        //databaseInitializeOptions.IncreaseParallelism();
-        //databaseInitializeOptions.OptimizeLevelStyleCompaction();
+        databaseOptions.create_if_missing = true;
     }
 
-    Database::~Database(){
-        closeDatabase();
+    AccountBalancesStorage::~AccountBalancesStorage(){
+        if(db != nullptr)
+            delete db;
     }
 
-    void Database::openDatabase(){
-        if (db != nullptr){
-            leveldb::Status status = leveldb::DB::Open(databaseInitializeOptions, databasePath, &db);
-            //if(!status.ok())
-                //throw PQB::Exceptions::Storage(status.getState());
+    void AccountBalancesStorage::openDatabase(){
+        leveldb::Status status = leveldb::DB::Open(databaseOptions, "../../tmp/leveldb", &db);
+        if(!status.ok()){
+            throw PQB::Exceptions::Storage(status.ToString());
         }
     }
 
-    void Database::closeDatabase(){
-        delete db;
-        db = nullptr;
-    }
-
-
-    cash AccountBalancesStorage::getAccountBalance(byte64_t &accountID){
-        /*
+    cash AccountBalancesStorage::getAccountBalance(byte64_t &accountID)
+    {
         std::string readValue;
-        rocksdb::Status status = db->Get(rocksdb::ReadOptions(), CFHandler, rocksdb::Slice((char*)accountID.data(), accountID.size()), &readValue);
+        leveldb::Status status = db->Get(leveldb::ReadOptions(), leveldb::Slice((char*)accountID.begin(), accountID.size()), &readValue);
         if (!status.ok())
-            throw PQB::Exceptions::Storage(status.getState());
+            throw PQB::Exceptions::Storage(status.ToString());
         cash value;
         std::memcpy(&value, readValue.data(), sizeof(cash));
         return value;
-        */
     }
 
     void AccountBalancesStorage::updateBalance(byte64_t &accountID, cash newAmount){
-        /*
-        rocksdb::Slice value((char*) &newAmount, sizeof(cash));
-        rocksdb::Status status = db->Put(rocksdb::WriteOptions(), CFHandler, rocksdb::Slice((char*)accountID.data(), accountID.size()), value);
+        leveldb::Slice value((char*) &newAmount, sizeof(cash));
+        leveldb::Status status = db->Put(leveldb::WriteOptions(), leveldb::Slice((char*)accountID.data(), accountID.size()), value);
         if (!status.ok())
-            throw PQB::Exceptions::Storage(status.getState());
-        */
+            throw PQB::Exceptions::Storage(status.ToString());
     }
 
     void AccountBalancesStorage::updateBalancesByBlock(Block &block){

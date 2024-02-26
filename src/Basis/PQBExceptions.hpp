@@ -13,6 +13,7 @@
 #define PQBLOCKCHAIN_EXCEPTIONS_HPP
 
 #include <iostream>
+#include <string>
 
 namespace PQB::Exceptions{
 
@@ -53,12 +54,12 @@ private:
 
 class Storage : public std::exception{
 public:
-    Storage(const char* exceptionMessage) : m_msg(exceptionMessage) {}
+    Storage(const std::string& exceptionMessage) : m_msg(exceptionMessage) {}
     const char* what() const noexcept override{
-        return m_msg;
+        return m_msg.c_str();
     }
 private:
-    const char* m_msg;
+    const std::string m_msg;
 };
 
 

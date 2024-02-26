@@ -14,7 +14,6 @@
 #include <vector>
 #include "leveldb/db.h"
 
-#include <PQBconstatnts.hpp>
 #include "Blob.hpp"
 #include "Block.hpp"
 #include "Transaction.hpp"
@@ -23,42 +22,13 @@
 namespace PQB
 {
 
-
-/// @brief RocksDB for storing PQB data
-class Database{
-public:
-    Database();
-    ~Database();
-
-    /**
-     * @brief Open the database
-     * @exception if there was an error during opening the database
-     * 
-     */
-    void openDatabase();
-
-    /**
-     * @brief Close the database
-     * @exception if there was an error during closing the database family handles
-     * 
-     */
-    void closeDatabase();
-
-    leveldb::DB* getDatabase(){
-        return db;
-    }
-
-private:
-    const char* databasePath = DATABASE_PATH; ///< location of database
-    leveldb::Options databaseInitializeOptions;
-    leveldb::DB* db; ///< Instance of RocksDB database
-};
-
-
 class AccountBalancesStorage{
 public:
     
-    AccountBalancesStorage(leveldb::DB* database) : db(database){}
+    AccountBalancesStorage();
+    ~AccountBalancesStorage();
+
+    void openDatabase();
 
     /**
      * @brief Get the account balance
@@ -86,6 +56,7 @@ public:
     void updateBalancesByBlock(Block& block);
 
 private:
+    leveldb::Options databaseOptions;
     leveldb::DB* db; ///< Instance of RocksDB database
 };
 
