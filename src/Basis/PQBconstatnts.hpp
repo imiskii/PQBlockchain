@@ -21,6 +21,8 @@ namespace PQB{
     /// @brief Location on the LevelDB databse where are stored IPv4, IPv6 address and aliases of other nodes (peers)
     const char* ADDRESS_DATABASE_PATH = "tmp/addressStorage";
     
+    /// @brief Max si of the message sended/received with a socket
+    const size_t MAX_MESSAGE_SIZE = 1400;
 }
 
 

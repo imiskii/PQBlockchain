@@ -25,6 +25,8 @@ namespace PQB{
 class HashMan{
 public:
 
+    static constexpr size_t SHA512_SIZE = 64; ///< size of SHA-512 in bytes
+
     /**
      * @brief Calculates hash of given data
      * 

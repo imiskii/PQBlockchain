@@ -12,7 +12,7 @@
 #pragma once
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include "PQBExceptions.hpp"
 #include "Interface.hpp"
 #include "Command.hpp"
@@ -51,7 +51,7 @@ private:
     void __deleteCommands();
 
     /// @brief Map with all existing commands and their creators
-    const std::map<const std::string_view, CommandCreator*> commandMap = {
+    const std::unordered_map<const std::string_view, CommandCreator*> commandMap = {
         {"exit", new ExitCC()},
         {"echo", new EchoCC()}
     };

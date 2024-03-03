@@ -23,6 +23,7 @@ include(CTest)
 
 # Global compile options
 add_compile_options(-Wall -Wextra -Wpedantic)
+add_link_options(-pthread -lncurses)
 
 
 # Debug flag
