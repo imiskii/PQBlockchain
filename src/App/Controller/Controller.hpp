@@ -51,7 +51,7 @@ private:
     void __deleteCommands();
 
     /// @brief Map with all existing commands and their creators
-    const std::unordered_map<const std::string_view, CommandCreator*> commandMap = {
+    const std::unordered_map<std::string, CommandCreator*> commandMap = {
         {"exit", new ExitCC()},
         {"echo", new EchoCC()}
     };

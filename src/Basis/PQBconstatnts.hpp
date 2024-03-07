@@ -23,6 +23,10 @@ namespace PQB{
     
     /// @brief Max si of the message sended/received with a socket
     const size_t MAX_MESSAGE_SIZE = 1400;
+    /// @brief Network port for PQB server application
+    const size_t PQB_SERVER_PORT = 8330;
+    /// @brief Maximal number of incoming connection requests in queue for accepting 
+    const size_t MAX_SERVER_QUEUE = 6;
 }
 
 

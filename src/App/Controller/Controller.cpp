@@ -44,8 +44,7 @@ namespace PQB{
     }
 
     CommandCreator* Controller::__choseCommand(std::string& command) const{
-        std::unordered_map<const std::string_view, CommandCreator*>::const_iterator it;
-        it = commandMap.find(command);
+        auto it = commandMap.find(command);
         if(it == commandMap.end()){
             std::string err = "Unknow command: '" + command + "'!";
             throw PQB::Exceptions::CommandInput(err.c_str());

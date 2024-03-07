@@ -14,66 +14,20 @@
 
 namespace PQB
 {
-    void Responder::assignToConnection(Connection *conn){
-        std::lock_guard<std::mutex> lock(connectionMutex);
-        connection = conn;
-    }
-
-    void Responder::revokeFromConnection(){
-        std::lock_guard<std::mutex> lock(connectionMutex);
-        connection = nullptr;
-        unregisterFromMessageProcessor();
-    }
-
-    bool Responder::isConnected(){
-        std::lock_guard<std::mutex> lock(connectionMutex);
-        return connection != nullptr;
-    }
-
-    void Responder::sendMessage(MessageShPtr message){
-        std::lock_guard<std::mutex> lock(connectionMutex);
-        if (connection != nullptr){
-            connection.sendMessage(message);
-        }
-    }
-
-    void Responder::registerToMessageProcessor() const{
-        messageProcessor->registerResponder(this, ID);
-    }
-
-    void Responder::unregisterFromMessageProcessor() const{
-        messageProcessor->unregisterResponder(ID);
-    }
-
-    void Responder::processMessage(MessageShPtr message){
-        
-    }
-
-/************************************************************************/
-/**************************** MessageProcessor **************************/
-/************************************************************************/
-
     MessageProcessor::MessageProcessor(){
-        processingThread = std::jthread(messageProcessor);
+        processingThread = std::jthread(&MessageProcessor::messageProcessor, this);
     }
 
-    void MessageProcessor::addMessageToProcessingQueue(uint32_t responderID, MessageShPtr message){
+    void MessageProcessor::processMessage(std::string &connectionID, MessageShPtr message){
+        // early processing
+        // response
+        // OR
+        // addMessageToProcessingQueue(connectionID, message);
+    }
+
+    void MessageProcessor::addMessageToProcessingQueue(std::string &connectionID, MessageShPtr message){
         std::lock_guard<std::mutex> lock(processingQueueMutex);
-        processingQueue.emplace(responderID, message);
-    }
-
-    Responder *MessageProcessor::createResponder(){        
-        return new Responder(this);
-    }
-
-    void MessageProcessor::registerResponder(const Responder *responder, const std::string &ID){
-        std::lock_guard<std::mutex> lock(responderPoolMutex);
-        respondersPool.insert({ID, responder});
-    }
-
-    void MessageProcessor::unregisterResponder(const std::string &ID){
-        std::lock_guard<std::mutex> lock(responderPoolMutex);
-        respondersPool.erase(ID);
+        processingQueue.emplace(connectionID, message);
     }
 
     void MessageProcessor::messageProcessor(){
@@ -85,13 +39,10 @@ namespace PQB
             processingQueue.pop();
             lock.unlock();
 
-            processMessage(msg.second);
+            //lateProcessing(msg.second);
         }
     }
 
-    void MessageProcessor::processMessage(MessageShPtr message){
-
-    }
 
 } // namespace PQB
 

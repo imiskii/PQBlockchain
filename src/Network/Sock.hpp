@@ -38,7 +38,7 @@ public:
     int Listen(int backlog) const;
 
     /// @brief Wrapper for the standard Berkeley sockets accept() function
-    std::unique_ptr<Sock> Accept(struct sockaddr* address, socklen_t* address_len) const;
+    Sock *Accept(struct sockaddr* address, socklen_t* address_len) const;
 
     /// @brief Wrapper for the standard Berkeley sockets connect() function
     int Connect(const struct sockaddr* address, socklen_t address_len) const;

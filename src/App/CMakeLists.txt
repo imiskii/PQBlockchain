@@ -22,3 +22,7 @@ add_executable(sig sig.cpp)
 target_link_libraries(sig PRIVATE falcon_1024 CommonLib)
 
 
+## TMP.cpp
+add_executable(tmp tmp.cpp)
+target_link_libraries(tmp PRIVATE CommonLib HashManagerLib)
+

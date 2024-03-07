@@ -38,15 +38,11 @@ namespace PQB{
         return listen(socket, backlog);
     }
 
-    std::unique_ptr<Sock> Sock::Accept(sockaddr *address, socklen_t *address_len) const{
-        std::unique_ptr<Sock> sock;
+    Sock *Sock::Accept(sockaddr *address, socklen_t *address_len) const{
+        Sock *sock = nullptr;
         int newSocket = accept(socket, address, address_len);
-        if(newSocket != -1){
-            try{
-                sock = std::make_unique<Sock>(newSocket);
-            } catch (std::exception&){
-                close(newSocket);
-            }
+        if(newSocket >= 0){
+            sock = new Sock(newSocket);
         }
         return sock;
     }

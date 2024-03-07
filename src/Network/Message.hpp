@@ -33,10 +33,10 @@ class Message{
 public:
 
     struct message_hdr_t{
-        uint32_t magicNum;
-        MessageType type;
-        uint32_t size;
-        uint32_t checkSum;
+        uint32_t magicNum;  ///< Number for checking if header was well parsed
+        MessageType type;   ///< Type of the message
+        uint32_t size;      ///< Size of message payload (without header size !)
+        uint32_t checkSum;  ///< Number for checking if message was well parsed
     };
 
     Message(const message_hdr_t &messageHeader);
@@ -44,7 +44,7 @@ public:
 
     /// @brief get size of message data (with header) in bytes
     size_t getSize() const {
-        return msgHdr.size + sizeof(struct message_hdr_t);
+        return messageSize;
     }
 
     /// @brief get pointer to message data (with header)
@@ -84,6 +84,7 @@ public:
 
 protected:
     message_hdr_t msgHdr;   ///< message header
+    size_t messageSize;     ///< size of the message (with header size)
     byteBuffer data;        ///< byte buffer representing message data (at the begining of these buffer is also the header)
     byteBuffer::iterator messageDataStart; ///< iterator to place where are message data starting at 'data' (place after message header)
 private:

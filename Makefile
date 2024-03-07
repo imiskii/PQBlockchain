@@ -66,7 +66,7 @@ pack: clean
 ##
 # MAKE DOCUMENTATION
 
-doc: clean
+doc:
 	doxygen $(DOXYGEN)/Doxyfile
 
 

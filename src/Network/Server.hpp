@@ -11,7 +11,16 @@
 
 #pragma once
 
-#include <memory>
+#include <string>
+#include <cstring>
+#include <thread>
+#include <atomic>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include "Connection.hpp"
+#include "Sock.hpp"
+#include "PQBconstatnts.hpp"
 
 
 namespace PQB{
@@ -19,9 +28,11 @@ namespace PQB{
 
 class Server{
 public:
-    Server() = delete;
-    void operator=(const Server &) = delete;
-    static std::shared_ptr<Server> GetInstance();
+
+    Server(ConnectionManager *connectionManager) : connManager(connectionManager), sock(nullptr), runAllowed(false) {}
+    ~Server(){
+        delete sock;
+    }
 
     void Run();
 
@@ -29,8 +40,18 @@ public:
 
 
 private:
-    void init();
-    bool isRunning;
+
+    ConnectionManager *connManager;
+    Sock *sock;
+
+    std::jthread serverThread;
+    std::atomic_bool runAllowed;
+
+    bool init();
+
+    bool setSocket();
+
+    void serverTask();
 };
 
 
