@@ -109,9 +109,14 @@ namespace PQB{
         if (!runServer()){
             /// @todo make log
         }
+        connectionManagerRunFlag = true;
+        connectionManagerThread = std::jthread(&ConnectionManager::manageConnections, this);
     }
 
     ConnectionManager::~ConnectionManager(){
+        connectionManagerRunFlag = false;
+        if (connectionManagerThread.joinable())
+            connectionManagerThread.join();
         delete server;
     }
 
@@ -366,9 +371,9 @@ namespace PQB{
         return nullptr;
     }
 
-    void ConnectionManager::messageReader(){
+    void ConnectionManager::manageConnections(){
         int changed;
-        while (messageReaderRunFlag)
+        while (connectionManagerRunFlag)
         {
             changed = poll(socketDescriptors.data(), socketDescriptors.size(), 0);
 

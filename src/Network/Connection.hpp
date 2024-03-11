@@ -150,8 +150,8 @@ private:
     std::queue<MessageRequest_t> messageRequestQueue; ///< queue with requests for ConnectionManager
     std::mutex messageRequestQueueMutex;
 
-    std::jthread messageReaderThread; ///< thread for reading messages from Connections sockets
-    std::atomic_bool messageReaderRunFlag; ///< true if message reader should run, false if should stop
+    std::jthread connectionManagerThread;
+    std::atomic_bool connectionManagerRunFlag; ///< true if message connection manager should run, false if should stop
 
     std::unordered_map<socket_t, Connection*> connectionPool; ///< socket descriptors mapped to Connections
     std::vector<struct pollfd> socketDescriptors; ///< vector of sokcet descriptors
@@ -260,7 +260,7 @@ private:
     Sock *connectToPeer(std::vector<std::string> &addresses);
 
     /// @brief Method for running ConnectionManager thread
-    void messageReader();
+    void manageConnections();
 
     /// @brief Handle accepting new connections aftere poll() set POLLIN flag
     void handleServerPoll();
