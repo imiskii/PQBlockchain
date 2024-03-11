@@ -25,6 +25,7 @@
 namespace PQB{
 
 
+/// @brief Representation of the PQB server
 class Server{
 public:
 
@@ -33,8 +34,11 @@ public:
         CloseServer();
     }
 
+    /// @brief Initialize socket on port 8330 and start listening to connections
+    /// @return Initialized socket object
     Sock *OpenServer();
 
+    /// @brief Close the server socket
     void CloseServer();
 
     /**
@@ -45,20 +49,19 @@ public:
      */
     Sock *AcceptConnection(std::string *port = nullptr);
 
-
-    Sock *getSock(){
-        return sock;
-    }
-
+    /// @brief Get socket descriptor of the server
+    /// @return Socket descriptor of the server or -1 if server is not initialized
     int getSocketFD();
 
 
 private:
 
-    Sock *sock;
+    Sock *sock; ///< Server socket object
 
+    /// @brief Initialize the server. Return true on success, false on failure
     bool init();
 
+    /// @brief Set servers socket object (create and bind socket). Return true on success, false on failure
     bool setSocket();
 };
 
