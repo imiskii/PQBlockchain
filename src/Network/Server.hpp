@@ -18,7 +18,6 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-#include "Connection.hpp"
 #include "Sock.hpp"
 #include "PQBconstatnts.hpp"
 
@@ -29,29 +28,38 @@ namespace PQB{
 class Server{
 public:
 
-    Server(ConnectionManager *connectionManager) : connManager(connectionManager), sock(nullptr), runAllowed(false) {}
+    Server() : sock(nullptr) {}
     ~Server(){
-        delete sock;
+        CloseServer();
     }
 
-    void Run();
+    Sock *OpenServer();
 
-    void Stop();
+    void CloseServer();
+
+    /**
+     * @brief Accept a connection
+     * 
+     * @param [out] port This parameter will be set to port number of the new connection
+     * @return Sock* Socket object representing new connection
+     */
+    Sock *AcceptConnection(std::string *port = nullptr);
+
+
+    Sock *getSock(){
+        return sock;
+    }
+
+    int getSocketFD();
 
 
 private:
 
-    ConnectionManager *connManager;
     Sock *sock;
-
-    std::jthread serverThread;
-    std::atomic_bool runAllowed;
 
     bool init();
 
     bool setSocket();
-
-    void serverTask();
 };
 
 

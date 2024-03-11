@@ -16,123 +16,158 @@ namespace PQB{
 
     class ConnectionManager;
 
-    Connection::Connection(std::string &connectionID, Sock *socket, ConnectionManager *mangerOfThisConnection) 
-    : connID(connectionID), sock(socket), manager(mangerOfThisConnection){
-        connected = true;
-        readerThread = std::jthread(&Connection::messageReader, this);
-        senderThread = std::jthread(&Connection::messageSender, this);
+    Connection::Connection(std::string &connectionID, Sock *socket, bool isOnUNL) 
+    : connID(connectionID), sock(socket){
+        isConfirmed = false;
+        isUNL = isOnUNL;
     }
 
     Connection::~Connection(){
-        // Threads are stopped at the object destruction
         sock->Shutdown(SHUT_RDWR);
         delete sock;
     }
 
-    void Connection::sendMessage(MessageShPtr msg){
-        std::lock_guard<std::mutex> lock(sendQueueMutex);
-        sendMessageQueue.push(msg);
-        sendCondition.notify_one();
+    void Connection::sendMessage(Message *message){
+        /// @todo calsulation of checksum place to MessageCreator
+        message->setCheckSum();
+        ssize_t bytesToSend = message->getSize();
+        ssize_t bytesSent = 0;
+        while (bytesToSend > 0){
+            ssize_t nBytes = sock->Send(message->getData() + bytesSent, (bytesToSend < MAX_MESSAGE_SIZE ? bytesToSend : MAX_MESSAGE_SIZE), 0);
+            if (nBytes <= 0){
+                break;
+            }
+            bytesToSend -= nBytes;
+            bytesSent += nBytes;
+        }
     }
 
-    void Connection::messageReader(){
+    Message *Connection::receiveMessage(bool *closeFlag){
+        *closeFlag = false;
         Message::message_hdr_t header;
-        while (connected)
-        {
-            if (!peekForHeader(&header))
-                continue;            
+        if (!peekForHeader(&header, closeFlag))
+            return nullptr;
+
+        Message *newMsg = new Message(header);
+        size_t bytesReceived = 0;
+        size_t bufferSize = (newMsg->getSize() < MAX_MESSAGE_SIZE ? newMsg->getSize() : MAX_MESSAGE_SIZE);
+        char *buffer = new char[bufferSize];
+        std::memset(buffer, 0, bufferSize);
+
+        /// @todo There is not timeout on receiving one large message. If second part of the message is larger than MAX_MESSAGE_SIZE and it does not come the thread will be stuck here
+        /// A problem may occure also if recived message is not complete because other parts do not came yet
+        while (bytesReceived < newMsg->getSize()){
+            ssize_t nBytes = sock->Recv(buffer, bufferSize, 0);
+            if (nBytes <= 0)
+                break;
             
-            MessageShPtr newMsg = std::make_shared<Message>(header);
-            size_t bytesReceived = 0;
-            size_t bufferSize = (newMsg->getSize() < MAX_MESSAGE_SIZE ? newMsg->getSize() : MAX_MESSAGE_SIZE);
-            char *buffer = new char[bufferSize];
+            newMsg->addFragment(buffer, nBytes);
+            bytesReceived += nBytes;
             std::memset(buffer, 0, bufferSize);
-
-            /// @todo There is not timeout on receiving one large message. If second part of the message is larger than MAX_MESSAGE_SIZE and it does not come the thread will be stuck here
-            while (bytesReceived < newMsg->getSize()){
-                ssize_t nBytes = sock->Recv(buffer, bufferSize, 0);
-                if (nBytes <= 0)
-                    break;
-                
-                newMsg->addFragment(buffer, nBytes);
-                bytesReceived += nBytes;
-                std::memset(buffer, 0, bufferSize);
-            }
-            if (bytesReceived == newMsg->getSize() && newMsg->checkMessage())
-                manager->messsagProcessor->processMessage(connID, newMsg); // send message to processing
-            delete[] buffer;
         }
-    }
-
-    void Connection::messageSender()
-    {
-        while (connected)
-        {
-            std::unique_lock<std::mutex> lock(sendQueueMutex);
-            sendCondition.wait(lock, [this]{ return (!sendMessageQueue.empty() || !connected); });
-            if (!connected){
-                lock.unlock();
-                continue;
-            }
-            MessageShPtr msg = sendMessageQueue.front();
-            sendMessageQueue.pop();
-            lock.unlock();
-
-            msg->setCheckSum();
-            ssize_t bytesToSend = msg->getSize();
-            size_t bytesSended = 0;
-            while (bytesToSend > 0){
-                ssize_t nBytes = sock->Send(msg->getData() + bytesSended, (bytesToSend < MAX_MESSAGE_SIZE ? bytesToSend : MAX_MESSAGE_SIZE), 0);
-                if (nBytes <= 0){
-                    break;
-                }
-                bytesToSend -= nBytes;
-                bytesSended += nBytes;
-            }
+        delete[] buffer;
+        if (bytesReceived == newMsg->getSize() && newMsg->checkMessage() && filterMessage(newMsg)){
+            return newMsg;
         }
+        delete newMsg;
+        return nullptr;
     }
 
-    void Connection::stopConnection(){
-        connected = false;
-        sendCondition.notify_one();
-        readerThread.join();
-        senderThread.join();
-        manager->deleteConnection(connID);
-    }
-
-    bool Connection::peekForHeader(Message::message_hdr_t *header){
-        ssize_t nBytes = sock->Recv(header, sizeof(struct Message::message_hdr_t), MSG_PEEK | MSG_WAITALL);
+    bool Connection::peekForHeader(Message::message_hdr_t *header, bool *closeFlag){
+        *closeFlag = false;
+        /// @todo adjust the parsing
+        ssize_t nBytes = sock->Recv(header, sizeof(struct Message::message_hdr_t), MSG_PEEK);
         if (nBytes == 0){
-            stopConnection();
-            return false; 
+            *closeFlag = true;
+            return false;
         } else if (nBytes < 0)
             return false;
         return header->magicNum == MESSAGE_MAGIC_CONST;
+    }
+
+    bool Connection::filterMessage(Message *message){
+        switch (message->getType())
+        {
+        case MessageType::ACK:
+            isConfirmed = true;
+            return false;
+        case MessageType::VERSION:
+            return isConfirmed ? false : true;
+        default:
+            return true;
+            break;
+        }
     }
 
 /************************************************************************/
 /*************************** ConnectionManager **************************/
 /************************************************************************/
 
-    void ConnectionManager::ConnectionWrapper::sendMessage(MessageShPtr msg){
-        std::lock_guard<std::mutex> lock(mutex);
-        if (conn != nullptr)
-            conn->sendMessage(msg);
-    }
-
-    void ConnectionManager::ConnectionWrapper::deleteConnection(){
-        std::lock_guard<std::mutex> lock(mutex);
-        if (conn != nullptr){
-            delete conn;
-            conn = nullptr;
+    ConnectionManager::ConnectionManager(MessageProcessor *msgProcessor, std::string &walletID)
+    : messsagProcessor(msgProcessor), localWalletID(walletID){
+        server = new Server();
+        if (!runServer()){
+            /// @todo make log
         }
     }
 
-    void ConnectionManager::ConnectionWrapper::setConnectionID(const std::string &newConnectionID){
-        std::lock_guard<std::mutex> lock(mutex);
+    ConnectionManager::~ConnectionManager(){
+        delete server;
+    }
+
+    void ConnectionManager::addMessageRequest(MessageRequest_t req){
+        std::lock_guard<std::mutex> lock(messageRequestQueueMutex);
+        messageRequestQueue.push(req);
+    }
+
+    void ConnectionManager::addConnectionRequest(std::string &peerID){
+        std::lock_guard<std::mutex> lock(connectionRequestQueueMutex);
+        connectionRequestQueue.push(peerID);
+    }
+
+    int ConnectionManager::getConnectionID(std::string &peerID){
+        Connection *conn = getConnectionFromConnectionPool(peerID);
         if (conn != nullptr){
-            conn->connID = newConnectionID;
+            return conn->getConnectionSocketFD();
         }
+        return -1;
+    }
+
+    void ConnectionManager::initUNLConnections()
+    {
+        /// @todo need reference to storage/UNL list
+        // check if connection is in connesctions
+        // if not create new connection
+        // fill vector with UNL connections
+    }
+
+    void ConnectionManager::notifyConnectionVersion(socket_t connectionID, std::string &peerID, bool status){
+        // If connection was considered unwanted close it and delete from connectionPool
+        if (!status){
+            deleteConnection(connectionID);
+            return;
+        }
+
+        Connection *thisConn = getConnectionFromConnectionPool(connectionID);
+
+        // Handle duplicit connections
+        if (isConnectionInConnectionPool(peerID)){
+            // If same connection already exists, then there is need to keep just one of these connections.
+            // To decide deterministically local wallet ID (local user ID) and connected peer ID are alphabetically compared.
+            // This problem may occure if when two peers initialize connection with each other at the same time, so
+            // they send VERSION message to each other and they are both waiting for ACK message.
+            if (localWalletID > peerID){ // If local wallet ID > peer ID, delete new connection and keep existing connection
+                deleteConnection(connectionID);
+                return;
+            } else { // Delete existing connection and keep this connection
+                Connection *exConn= getConnectionFromConnectionPool(peerID);
+                deleteConnection(exConn->getConnectionSocketFD());
+            }
+        }
+        updatePeerIdOfConnectionInConnectionPool(connectionID, thisConn->connID, peerID);
+        thisConn->isConfirmed = true;
+        /// @todo send ACK
+        
     }
 
     bool ConnectionManager::createNewConnection(std::string &peerID, std::vector<std::string> &addresses){
@@ -140,104 +175,155 @@ namespace PQB{
         if (isConnectionInConnectionPool(peerID))
             return false;
 
-        // Create new Connection and add it to waitingConnectionsMap
+        // Create new Connection
         Sock *sock = connectToPeer(addresses);
         if (sock == nullptr){
             return false;
         }
-        Connection *connection = new Connection(peerID, sock, this);
-        std::shared_ptr<ConnectionWrapper> connectionWrapper = std::make_shared<ConnectionWrapper>(connection);
-        if (!addConnectionToWaitingConnectionPool(peerID, connectionWrapper)){
-            connectionWrapper->deleteConnection();
+        Connection *connection = new Connection(peerID, sock);
+        if (!addConnectionToConnectionPool(sock->getSocketFD(), connection, peerID)){
+            delete connection;
             return false;
         }
+        connection->isConfirmed = true;
         /// @todo send VERSION message
         return true;
     }
 
     bool ConnectionManager::acceptNewConnection(std::string &port, Sock *socket){
-        Connection *connection = new Connection(port, socket, this);
-        std::shared_ptr<ConnectionWrapper> connectionWrapper = std::make_shared<ConnectionWrapper>(connection);
-        // Add to waiting connections pool, wait for VERSION message
-        if (!addConnectionToWaitingConnectionPool(port, connectionWrapper)){
-            connectionWrapper->deleteConnection();
+        Connection *connection = new Connection(port, socket);
+        if (!addConnectionToConnectionPool(socket->getSocketFD(), connection, port)){
+            delete connection;
             return false;
         }
         return true;
     }
 
-    void ConnectionManager::notifyConnectionAck(std::string &peerID){
-        // Check if the same connection isn't in connectionPool (performed in moveConnectionToConnectionPool())
-        // If no, move this connection to connectionPool (performed in moveConnectionToConnectionPool())
-        if (!moveConnectionToConnectionPool(peerID, peerID)){
-            // If yes, alphabetically compare local user ID (address/wallet ID) with the peer address/wallet ID.
-            // If local user ID > peer ID, replace exiting connection in connectionPool with this connection
-            // else close this connection.
-            // This step is done to deterministically decide the connection between two peers
-            // The problem is that when two peers initialize connection with each other at the same time, so
-            // they send VERSION message to each other and they are both waiting for ACK message, there has to be
-            // a mechanism that decide which of these 2 initialized connections will stay and which will be closed.
-            if (thisPeerID > peerID){
-                forceMoveConnectionToConnectionPool(peerID, peerID);
-            } else {
-                deleteConnectionFromWaitingConnectionPool(peerID);
+    void ConnectionManager::deleteConnection(const socket_t connectionID){
+        auto connection = getConnectionFromConnectionPool(connectionID);
+        if (connection != nullptr){
+            deleteConnectionFromConnectionPool(connectionID, connection->connID);
+            delete connection;
+        }
+    }
+
+    bool ConnectionManager::sendMessageToPeer(const socket_t connectionID, std::string &peerID, Message *message){
+        auto connection = getConnectionFromConnectionPool(connectionID);
+        if (connection != nullptr){
+            if (connection->connID == peerID && connection->isConfirmed){
+                connection->sendMessage(message);
+                return true;
             }
         }
+        return false;
     }
 
-    void ConnectionManager::notifyConnectionVersion(std::string &port, std::string &peerID, bool confirmed){
-        // If connection was considered unwanted close it and delete from waitingConnectionPool
-        if (!confirmed)
-            deleteConnectionFromWaitingConnectionPool(port);
-
-        // Check if the same connection isn't in connectionPool (performed in moveConnectionToConnectionPool())
-        if (moveConnectionToConnectionPool(port, peerID)){ // if no, send ACK and add it to connectionPool
-            /// @todo send ACK to peer (peerID)
-
-        } else { // if yes, close this connection
-            deleteConnectionFromWaitingConnectionPool(port);
+    void ConnectionManager::broadcastMessageToAllPeers(Message *message){
+        for (const auto &conn : connectionPool){
+            if (conn.second->isConfirmed)
+                conn.second->sendMessage(message);
         }
     }
 
-    void ConnectionManager::deleteConnection(std::string &connectionID){
-        auto connection = getConnectionFromConnectionPool(connectionID);
-        if (connection){
-            deleteConnectionFromConnectionPool(connectionID);
-            connection->deleteConnection();
+    void ConnectionManager::broadcastMessageToUNLPeers(Message *message){
+        for (const auto &conn : connectionPool){
+            if (conn.second->isUNL && conn.second->isConfirmed)
+                conn.second->sendMessage(message);
         }
     }
 
-    void ConnectionManager::initUNLConnections(){
-        /// @todo need reference to storage/UNL list
-        // check if connection is in connesctions
-        // if not create new connection
-    }
-
-    void ConnectionManager::sendMessageToPeer(std::string &peerID, MessageShPtr message){
-        auto connection = getConnectionFromConnectionPool(peerID);
-        if (connection){
-            connection->sendMessage(message);
+    bool ConnectionManager::addConnectionToConnectionPool(const socket_t connectionID, Connection* connection, const std::string &peerID){
+        if (connectionPool.find(connectionID) == connectionPool.end()){
+            setOfConnectedPeers.insert(peerID);
+            connectionPool[connectionID] = connection;
+            addSocketDescriptor(connectionID);
+            return true;
         }
+        return false;
     }
 
-    void ConnectionManager::broadcastMessageToAllPeers(MessageShPtr message){
-        std::shared_lock<std::shared_mutex> lock(connectionPoolMutex);
-        for (const auto &el : connectionPool){
-            el.second->sendMessage(message);
+    void ConnectionManager::deleteConnectionFromConnectionPool(const socket_t connectionID, const std::string &peerID){
+        setOfConnectedPeers.erase(peerID);
+        connectionPool.erase(connectionID);
+        deleteSocketDescriptor(connectionID);
+    }
+
+    Connection* ConnectionManager::getConnectionFromConnectionPool(const socket_t connectionID){
+        auto it = connectionPool.find(connectionID);
+        if (it == connectionPool.end())
+            return nullptr;
+        else
+            return it->second;
+    }
+
+    Connection *ConnectionManager::getConnectionFromConnectionPool(const std::string &peerID){
+        if (isConnectionInConnectionPool(peerID)){
+            for (auto &conn : connectionPool){
+                if (conn.second->connID == peerID)
+                    return conn.second;
+            }
         }
+        return nullptr;
     }
 
-    void ConnectionManager::broadcastMessageToUNLPeers(MessageShPtr message){
-        std::shared_lock<std::shared_mutex> lock(UNLPeerIDsMutex);
-        for (const auto &peerID : UNLPeerIDs){
-            auto connection = getConnectionFromConnectionPool(peerID);
-            if (connection != nullptr)
-                connection->sendMessage(message);
+    bool ConnectionManager::isConnectionInConnectionPool(const std::string &peerID){
+        auto it = setOfConnectedPeers.find(peerID);
+        if (it == setOfConnectedPeers.end())
+            return false;
+        return true;
+    }
+
+    bool ConnectionManager::isConnectionInConnectionPool(const socket_t connectionID){
+        auto it = connectionPool.find(connectionID);
+        if (it == connectionPool.end())
+            return false;
+        return true;
+    }
+
+    bool ConnectionManager::updatePeerIdOfConnectionInConnectionPool(const socket_t connectionID, const std::string &oldPeerID, std::string &newPeerID){
+        auto it = connectionPool.find(connectionID);
+        if (it != connectionPool.end()){
+            setOfConnectedPeers.erase(oldPeerID);
+            setOfConnectedPeers.insert(newPeerID);
+            it->second->connID = newPeerID;
+            return true;
         }
+        return false;
     }
 
-    Sock *ConnectionManager::connectToPeer(std::vector<std::string> &addresses)
-    {
+    void ConnectionManager::addSocketDescriptor(const socket_t socket_fd){
+        struct pollfd newDescriptor = {.fd=socket_fd, .events=POLLIN | POLLPRI, .revents=0};
+        socketDescriptors.push_back(newDescriptor);
+    }
+
+    void ConnectionManager::deleteSocketDescriptor(const socket_t socket_fd){
+        auto it = std::remove_if(socketDescriptors.begin(), socketDescriptors.end(),
+            [socket_fd] (const struct pollfd &s) {
+                return s.fd == socket_fd;
+            });
+        if (it != socketDescriptors.end())
+            socketDescriptors.erase(it);
+    }
+
+    bool ConnectionManager::runServer(){
+        Sock *serverSock = server->OpenServer();
+        if (serverSock != nullptr){
+            struct pollfd serverFD = {.fd=serverSock->getSocketFD(), .events=POLLIN, .revents=0};
+            socketDescriptors.insert(socketDescriptors.begin(), serverFD);
+            return true;
+        }
+        return false;
+    }
+
+    void ConnectionManager::stopServer(){
+        if (!socketDescriptors.empty()){
+            if (socketDescriptors[0].fd == server->getSocketFD())
+                socketDescriptors.erase(socketDescriptors.begin());
+        }
+        server->CloseServer();
+    }
+
+    Sock *ConnectionManager::connectToPeer(std::vector<std::string> &addresses){
         // Set hints for getaddrinfo()
         struct addrinfo hints, *result = nullptr;
         std::memset(&hints, 0, sizeof(hints));
@@ -280,94 +366,87 @@ namespace PQB{
         return nullptr;
     }
 
-    bool ConnectionManager::addConnectionToConnectionPool(const std::string &peerID, const std::shared_ptr<ConnectionWrapper> connection){
-        std::lock_guard<std::shared_mutex> lock(connectionPoolMutex);
-        auto it = connectionPool.find(peerID);
-        if (it == connectionPool.end()){
-            connectionPool.insert({peerID, connection});
-            return true;
+    void ConnectionManager::messageReader(){
+        int changed;
+        while (messageReaderRunFlag)
+        {
+            changed = poll(socketDescriptors.data(), socketDescriptors.size(), 0);
+
+            if (changed < 0){ // poll failure
+                /// @todo handle poll failure
+                /// @todo make log
+            } else if (changed > 0 && !socketDescriptors.empty()){ // read sockets
+                int isServer = (socketDescriptors.at(0).fd == server->getSocketFD()) ? 1 : 0;
+                if ((socketDescriptors.at(0).revents & POLLIN) && (isServer)){
+                    handleServerPoll();
+                    socketDescriptors.at(0).revents = 0;
+                }
+                for (auto it = socketDescriptors.begin() + isServer; it != socketDescriptors.end(); ++it){
+                    if ((it->revents & (POLLIN | POLLPRI)) != 0){
+                        handleConnectionPoll(it->fd);
+                        it->revents = 0;
+                    }
+                }
+            }
+            processMessageQueueRequests();
+            processConnectionQueueRequests();
         }
-        return false;
+    }
+     
+    void ConnectionManager::handleServerPoll(){
+        std::string clientPort;
+        Sock *clientSock = server->AcceptConnection(&clientPort);
+        if (clientSock != nullptr)
+            acceptNewConnection(clientPort, clientSock);
+        
     }
 
-    void ConnectionManager::deleteConnectionFromConnectionPool(const std::string & peerID){
-        std::lock_guard<std::shared_mutex> lock(connectionPoolMutex);
-        connectionPool.erase(peerID);
-    }
-
-    std::shared_ptr<ConnectionManager::ConnectionWrapper> ConnectionManager::getConnectionFromConnectionPool(const std::string &peerID){
-        std::shared_lock<std::shared_mutex> lock(connectionPoolMutex);
-        auto it = connectionPool.find(peerID);
-        if (it == connectionPool.end())
-            return nullptr;
-        else
-            return it->second;
-    }
-
-    bool ConnectionManager::isConnectionInConnectionPool(const std::string &peerID){
-        std::shared_lock<std::shared_mutex> lock(connectionPoolMutex);
-        auto it = connectionPool.find(peerID);
-        if (it == connectionPool.end())
-            return false;
-        return true;
-    }
-
-    bool ConnectionManager::addConnectionToWaitingConnectionPool(const std::string &connectionID, const std::shared_ptr<ConnectionManager::ConnectionWrapper> connection){
-        std::lock_guard<std::mutex> lock(waitingConnectionPoolMutex);
-        auto it = waitingConnectionPool.find(connectionID);
-        if (it == waitingConnectionPool.end()){
-            waitingConnectionPool.insert({connectionID, connection});
-            return true;
-        }
-        return false;
-    }
-
-    void ConnectionManager::deleteConnectionFromWaitingConnectionPool(const std::string &connectionID){
-        std::lock_guard<std::mutex> lock(waitingConnectionPoolMutex);
-        auto it = waitingConnectionPool.find(connectionID);
-        if (it != waitingConnectionPool.end()){
-            it->second->deleteConnection();
-            waitingConnectionPool.erase(connectionID);
+    void ConnectionManager::handleConnectionPoll(int socket_fd){
+        Connection *conn = getConnectionFromConnectionPool(socket_fd);
+        if (conn != nullptr){
+            bool closeFlag;
+            Message *msg = conn->receiveMessage(&closeFlag);
+            if (closeFlag){
+                deleteConnection(socket_fd);
+            } else {
+                if (msg != nullptr)
+                    messsagProcessor->processMessage(socket_fd, conn->connID, msg);
+            }
         }
     }
 
-    bool ConnectionManager::moveConnectionToConnectionPool(const std::string &peerID, const std::string &newPeerID){
-        std::lock_guard<std::mutex> lockWCP(waitingConnectionPoolMutex);
-        auto it_wcp = waitingConnectionPool.find(peerID);
-        if (it_wcp == waitingConnectionPool.end())
-            return false;
+    void ConnectionManager::processMessageQueueRequests(){
+        std::lock_guard<std::mutex> lock(messageRequestQueueMutex);
+        while (messageRequestQueue.empty()){
+            MessageRequest_t req = messageRequestQueue.front();
+            messageRequestQueue.pop();
 
-        std::lock_guard<std::shared_mutex> lockCP(connectionPoolMutex);
-        auto it_cp = connectionPool.find(newPeerID);
-        if (it_cp != connectionPool.end()){
-            return false;
+            switch (req.type)
+            {
+            case MessageRequestType::ONE:
+                sendMessageToPeer(req.connectionID, req.peerID, req.message);
+                break;
+            case MessageRequestType::UNLCAST:
+                broadcastMessageToUNLPeers(req.message);
+                break;
+            case MessageRequestType::BROADCAST:
+                broadcastMessageToAllPeers(req.message);
+                break;           
+            default:
+                break;
+            }
         }
-
-        it_wcp->second->setConnectionID(newPeerID);
-        connectionPool.insert({newPeerID, it_wcp->second});
-        waitingConnectionPool.erase(peerID);
-        return true;
     }
 
-    bool ConnectionManager::forceMoveConnectionToConnectionPool(const std::string &peerID, const std::string &newPeerID){
-        std::lock_guard<std::mutex> lockWCP(waitingConnectionPoolMutex);
-        auto it_wcp = waitingConnectionPool.find(peerID);
-        if (it_wcp == waitingConnectionPool.end())
-            return false;
-
-        std::lock_guard<std::shared_mutex> lockCP(connectionPoolMutex);
-        auto it_cp = connectionPool.find(newPeerID);
-        if (it_cp != connectionPool.end()){
-            it_cp->second->deleteConnection();
-            connectionPool.erase(newPeerID);
+    void ConnectionManager::processConnectionQueueRequests(){
+        std::lock_guard<std::mutex> lock(connectionRequestQueueMutex);
+        while (connectionRequestQueue.empty()){
+            std::string connID = connectionRequestQueue.front();
+            connectionRequestQueue.pop();
+            /// @todo query from database
+            // createNewConnection(connID, );
         }
-
-        it_wcp->second->setConnectionID(newPeerID);
-        connectionPool.insert({newPeerID, it_wcp->second});
-        waitingConnectionPool.erase(peerID);
-        return true;
     }
-
 
 } // namespace PQB
 

@@ -13,20 +13,49 @@
 
 namespace PQB{
 
-
-    void Server::Run(){
+    Sock *Server::OpenServer(){
         if (init()){
-            runAllowed = true;
-            serverThread = std::jthread(&Server::serverTask, this);
+            return sock;
         }
-        /// @todo handle failure
+        /// @todo make log
+        if (sock != nullptr){
+            delete sock;
+            sock = nullptr;
+        }
+        return nullptr;
     }
 
-    void Server::Stop(){
-        runAllowed = false;
-        sock->Shutdown(SHUT_RDWR);
-        delete sock;
-        serverThread.join();
+    void Server::CloseServer(){
+        if (sock != nullptr){
+            sock->Shutdown(SHUT_RDWR);
+            delete sock;
+            sock = nullptr;
+        }
+    }
+
+    Sock *Server::AcceptConnection(std::string *port){
+        if (sock == nullptr){
+            return nullptr;
+        }
+        struct sockaddr_in6 clientAddr;
+        socklen_t clientAddrLen = sizeof(clientAddr);
+        Sock *clientSock = sock->Accept((sockaddr *)&clientAddr, &clientAddrLen);
+        if (clientSock == nullptr){
+            return nullptr;
+        }
+        if (port != nullptr){
+            std::string clientPort = std::to_string(ntohs(clientAddr.sin6_port));
+            *port = clientPort;
+        }
+        return clientSock;
+    }
+
+    int Server::getSocketFD()
+    {
+        if (sock != nullptr){
+            return sock->getSocketFD();
+        }
+        return -1;
     }
 
     bool Server::init(){
@@ -60,20 +89,6 @@ namespace PQB{
         return true;
     }
 
-    void Server::serverTask(){
-        while (runAllowed)
-        {
-            struct sockaddr_in6 clientAddr;
-            socklen_t clientAddrLen = sizeof(clientAddr);
-            std::memset(&clientAddr, 0, clientAddrLen);
-            Sock *clientSock = sock->Accept((sockaddr *)&clientAddr, &clientAddrLen);
-            if (clientSock == nullptr){
-                continue;
-            }
-            std::string clientPort = std::to_string(ntohs(clientAddr.sin6_port));
-            connManager->acceptNewConnection(clientPort, clientSock);
-        }
-    }
 
 } // namespace PQB
 

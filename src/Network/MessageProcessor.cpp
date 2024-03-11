@@ -18,14 +18,14 @@ namespace PQB
         processingThread = std::jthread(&MessageProcessor::messageProcessor, this);
     }
 
-    void MessageProcessor::processMessage(std::string &connectionID, MessageShPtr message){
+    void MessageProcessor::processMessage(int connectionID, std::string &peerID, Message *message){
         // early processing
         // response
         // OR
         // addMessageToProcessingQueue(connectionID, message);
     }
 
-    void MessageProcessor::addMessageToProcessingQueue(std::string &connectionID, MessageShPtr message){
+    void MessageProcessor::addMessageToProcessingQueue(std::string &connectionID, Message *message){
         std::lock_guard<std::mutex> lock(processingQueueMutex);
         processingQueue.emplace(connectionID, message);
     }
@@ -35,7 +35,7 @@ namespace PQB
         {
             std::unique_lock<std::mutex> lock(processingQueueMutex);
             processCondition.wait(lock, [this]{ return !processingQueue.empty(); });
-            std::pair<std::string, MessageShPtr> msg = processingQueue.front();
+            std::pair<std::string, Message*> msg = processingQueue.front();
             processingQueue.pop();
             lock.unlock();
 

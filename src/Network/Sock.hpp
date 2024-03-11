@@ -18,8 +18,8 @@
 
 namespace PQB{
 
-typedef unsigned int socket_t;
-const socket_t INVALID_SOCKET = (~0);
+typedef int socket_t;
+const socket_t INVALID_SOCKET = -1;
 
 /// @brief Manages socket and close it automatically after deletion of the object
 class Sock{
@@ -27,6 +27,11 @@ public:
     Sock() = delete;
     explicit Sock(socket_t s);
     ~Sock();
+
+    /// @brief Get the socket file descriptor
+    socket_t getSocketFD(){
+        return socket;
+    }
 
     /// @brief Close the socket
     void Close();

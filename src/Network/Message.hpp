@@ -22,6 +22,7 @@ enum class MessageType : uint32_t{
     TX,
     INV,
     VERSION,
+    ACK,
 
 };
 
@@ -90,10 +91,6 @@ protected:
 private:
     size_t currentMessageSize; ///< size of added message fragments in bytes
 };
-
-
-/// @brief Shared pointer to message
-typedef std::shared_ptr<Message> MessageShPtr;
 
 
 class VersionMessage : public Message{
