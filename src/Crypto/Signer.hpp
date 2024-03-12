@@ -64,6 +64,7 @@ public:
     virtual bool verify(const PQB::byteBuffer& signature, const PQB::byte* signedData, size_t dataSize, const PQB::byteBuffer& publicKey) = 0;
     virtual size_t getPrivateKeySize() = 0;
     virtual size_t getPublicKeySize() = 0;
+    virtual size_t getSignatureSize() = 0;
     virtual ~SignAlgorithm() = default;
 };
 
@@ -84,6 +85,14 @@ public:
     Signer(Signer &other) = delete;
     void operator=(const Signer &) = delete;
 
+    /**
+     * @brief Getter for program Digital signature algorithm. The first call will choose the signature algorithm (default is falcon1024).
+     * Other calls will just return this choosen algorithm no metter if different algorithm was specified.
+     * 
+     * @param chosenAlgorithm Choose digital signature algorithm that will be used. Has effect just at the first call of this method.
+     * After first call this parameter makes no other difference in returned digital signature algorithm.
+     * @return SignAlgorithmPtr Instance of choosen digital signature algorithm
+     */
     static SignAlgorithmPtr GetInstance(std::string chosenAlgorithm = "falcon1024");
 };
 
@@ -93,8 +102,9 @@ public:
     void genKeys(PQB::byteBuffer& privateKey, PQB::byteBuffer& publicKey) override;
     size_t sign(PQB::byteBuffer& signature, const PQB::byte* dataToSign, size_t dataSize, const PQB::byteBuffer& privateKey) override;
     bool verify(const PQB::byteBuffer& signature, const PQB::byte* signedData, size_t dataSize, const PQB::byteBuffer& publicKey) override;
-    size_t getPrivateKeySize(){ return privateKeySize; }
-    size_t getPublicKeySize(){ return publicKeySize; }
+    size_t getPrivateKeySize() override { return privateKeySize; }
+    size_t getPublicKeySize() override { return publicKeySize; }
+    size_t getSignatureSize() override { return signatureSize; }
 private:
     static constexpr size_t privateKeySize = PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES;
     static constexpr size_t publicKeySize = PQCLEAN_FALCON1024_CLEAN_CRYPTO_PUBLICKEYBYTES;
@@ -107,8 +117,9 @@ public:
     void genKeys(PQB::byteBuffer& privateKey, PQB::byteBuffer& publicKey) override;
     size_t sign(PQB::byteBuffer& signature, const PQB::byte* dataToSign, size_t dataSize, const PQB::byteBuffer& privateKey) override;
     bool verify(const PQB::byteBuffer& signature, const PQB::byte* signedData, size_t dataSize, const PQB::byteBuffer& publicKey) override;
-    size_t getPrivateKeySize(){ return privateKeySize; }
-    size_t getPublicKeySize(){ return publicKeySize; }
+    size_t getPrivateKeySize() override { return privateKeySize; }
+    size_t getPublicKeySize() override { return publicKeySize; }
+    size_t getSignatureSize() override { return signatureSize; }
 private:
     static constexpr size_t privateKeySize = CryptoPP::ed25519PrivateKey::SECRET_KEYLENGTH;
     static constexpr size_t publicKeySize = CryptoPP::ed25519PublicKey::PUBLIC_KEYLENGTH;

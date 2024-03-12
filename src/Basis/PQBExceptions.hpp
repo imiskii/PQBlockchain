@@ -18,6 +18,32 @@
 namespace PQB::Exceptions{
 
 
+class Block : public std::exception{    
+public:
+    Block(const std::string& exceptionMessage) : m_msg(exceptionMessage) {}
+    const char *what() const noexcept override{
+        return m_msg.c_str();
+    }
+
+
+private:
+    const std::string m_msg;
+};
+
+
+class Transaction : public std::exception{    
+public:
+    Transaction(const std::string& exceptionMessage) : m_msg(exceptionMessage) {}
+    const char *what() const noexcept override{
+        return m_msg.c_str();
+    }
+
+
+private:
+    const std::string m_msg;
+};
+
+
 class Signer : public std::exception{    
 public:
     Signer(const std::string& exceptionMessage) : m_msg(exceptionMessage) {}
