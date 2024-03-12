@@ -7,3 +7,6 @@
 [submodule "extern/LevelDB"]
 	path = extern/LevelDB
 	url = https://github.com/google/leveldb.git
+[submodule "extern/json"]
+	path = extern/json
+	url = https://github.com/nlohmann/json.git
