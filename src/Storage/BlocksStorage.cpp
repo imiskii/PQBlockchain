@@ -12,18 +12,22 @@
 #include "PQBExceptions.hpp"
 #include "PQBconstatnts.hpp"
 
-
 namespace PQB{
 
 
 BlocksStorage::BlocksStorage(){
     db = nullptr;
     databaseOptions.create_if_missing = true;
+    databaseOptions.block_size = MAX_BLOCK_SIZE;
+    databaseOptions.block_cache = leveldb::NewLRUCache(2 * MAX_BLOCK_SIZE); /// 2MB, just for optimalization. This database wont be working with more than one block at once.
 }
 
 BlocksStorage::~BlocksStorage(){
-    if(db != nullptr)
+    if(db != nullptr){
         delete db;
+        delete databaseOptions.block_cache;
+    }
+        
 }
 
 void BlocksStorage::openDatabase(){
@@ -33,14 +37,39 @@ void BlocksStorage::openDatabase(){
     }
 }
 
-Block *BlocksStorage::getBlock(size_t blockHeight){
-    return nullptr;
+Block *BlocksStorage::getBlock(byte64_t &blockHash){
+    std::string readValue;
+    leveldb::Status status = db->Get(leveldb::ReadOptions(), leveldb::Slice((char*)blockHash.data(), blockHash.size()), &readValue);
+    if (status.IsNotFound()){
+        return nullptr;
+    } else if (!status.ok()){
+        /// @todo make log
+        // throw PQB::Exceptions::Storage(status.ToString());
+        return nullptr;
+    }
+    byteBuffer buffer(readValue.begin(), readValue.end());
+    Block *newBlock = new Block();
+    newBlock->deserialize(buffer);
+    return newBlock;
 }
 
-void BlocksStorage::saveBlock(Block &block){
-
+bool BlocksStorage::setBlock(Block &block){
+    byteBuffer buffer;
+    block.serialize(buffer);
+    byte64_t blockHash = block.getBlockHash();
+    if (setBlock(blockHash, buffer))
+        return true;
+    return false;
 }
 
+bool BlocksStorage::setBlock(byte64_t &blockHash, byteBuffer &buffer){
+    leveldb::Slice value((char*) buffer.data(), buffer.size());
+    leveldb::Status status = db->Put(leveldb::WriteOptions(), leveldb::Slice((char*)blockHash.data(), blockHash.size()), value);
+    if (!status.ok())
+        return false;
+    return true;
+
+}
 
 } // namespace PQB
 

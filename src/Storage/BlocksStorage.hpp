@@ -12,6 +12,7 @@
 
 #include "leveldb/db.h"
 #include "leveldb/slice.h"
+#include "leveldb/cache.h"
 #include "Blob.hpp"
 #include "Block.hpp"
 #include "Transaction.hpp"
@@ -34,23 +35,35 @@ public:
     void openDatabase();
 
     /**
-     * @brief Get the block data from database
+     * @brief Query a block data from the database
      * 
-     * @param blockHeight block height (number representiong position of the block in the blockchain)
-     * @return Block* pointer to block's data
+     * @param blockHash Identifier of the block to query
+     * @return Block* pointer to block's data or nullptr if a block with given hash was not found or database Get error occure
      */
-    Block* getBlock(size_t blockHeight);
+    Block* getBlock(byte64_t &blockHash);
 
     /**
      * @brief Put block into database
      * 
-     * @param block block data that will be inserted in database
+     * @param block block data that will be inserted into the database
+     * @return true if operation was successful
+     * @return false if operation fails
      */
-    void saveBlock(Block& block);
+    bool setBlock(Block &block);
+
+    /**
+     * @brief Put block into database
+     * 
+     * @param blockHash Identifier of the block
+     * @param buffer serialized block data that will be inserted into the database
+     * @return true if operation was successful
+     * @return false if operation fails
+     */
+    bool setBlock(byte64_t &blockHash, byteBuffer &buffer);
 
 private:
     leveldb::Options databaseOptions;
-    leveldb::DB* db; ///< Instance of RocksDB database
+    leveldb::DB* db; ///< Instance of LevelDB database
 };
 
 

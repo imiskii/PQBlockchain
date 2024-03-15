@@ -17,7 +17,6 @@ namespace PQB{
 
 
 byte64_t ComputeMerkleRoot(std::vector<byte64_t> leafsHashes){
-    CryptoPP::SHA512 hash;
     while (leafsHashes.size() > 1)
     {
         if(leafsHashes.size() & 1){
