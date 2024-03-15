@@ -35,6 +35,8 @@ namespace PQB{
     }
 
     void BlockHeader::serialize(byteBuffer &buffer, size_t &offset) const{
+        if ((buffer.size() - offset) < getSize())
+            throw PQB::Exceptions::Block("Serialization: buffer size is too small for serialization");
         if (transactionsMerkleRootHash.IsNull())
             throw PQB::Exceptions::Block("Serialization: Missing block's transactionsMerkleRootHash");
         if (previousBlockHash.IsNull())
@@ -50,6 +52,8 @@ namespace PQB{
     }
 
     void BlockHeader::deserialize(const byteBuffer &buffer, size_t &offset){
+        if ((buffer.size() - offset) < getSize())
+            throw PQB::Exceptions::Block("Deserialization: buffer size is too small for deserialization");
         deserializeField(buffer, offset, version);
         deserializeField(buffer, offset, size);
         deserializeField(buffer, offset, timestamp);
@@ -71,6 +75,8 @@ namespace PQB{
     }
 
     void BlockBody::serialize(byteBuffer &buffer, size_t &offset) const{
+        if ((buffer.size() - offset) < getSize())
+            throw PQB::Exceptions::Block("Serialization: buffer size is too small for serialization");
         serializeField(buffer, offset, transactionCount);
         for (const auto &tx : txSet){
             tx->serialize(buffer, offset);
@@ -78,6 +84,8 @@ namespace PQB{
     }
 
     void BlockBody::deserialize(const byteBuffer &buffer, size_t &offset){
+        if ((buffer.size() - offset) < sizeof(transactionCount))
+            throw PQB::Exceptions::Block("Deserialization: buffer size is too small for deserialization");
         deserializeField(buffer, offset, transactionCount);
         for (size_t i = 0; i < transactionCount; i++){
             TransactionPtr tx = std::make_shared<Transaction>();

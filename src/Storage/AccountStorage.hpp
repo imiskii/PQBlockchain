@@ -80,7 +80,11 @@ public:
      */
     void setBalancesByTxSet(std::set<TransactionPtr, TransactionPtrComparator> &txSet);
 
-    
+    /**
+     * @brief Calculate merkle tree root hash of all accounts (account balances) in the database
+     * 
+     * @return byte64_t root hash of account balances
+     */
     byte64_t getAccountsMerkleRootHash();
 
     /// @brief Get size of a BalanceData elements (fields) in bytes

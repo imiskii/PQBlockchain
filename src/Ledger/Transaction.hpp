@@ -54,6 +54,7 @@ public:
     /// @brief Serialize TransactionData
     /// @param buffer buffer for serialization
     /// @param offset offset to the buffer
+    /// @exception if addresses of sender and receiver of the transaction are not assigned
     void serialize(byteBuffer &buffer, size_t &offset) const;
 
     /// @brief Deserialize TransactionData
@@ -97,22 +98,27 @@ public:
     void setHash();
 
     /// @brief Sign the transaction
+    /// @param privateKey private key for signing
+    /// @exception if signing fails or transaction is not hashed (IDHash is null)
     void sign(byteBuffer &privateKey);
 
     /// @brief Verify transaction signature
     bool verify(byteBuffer &publicKey);
 
     /// @brief Get size of the Transaction in bytes
+    /// @exception if transaction is not sign so size of signature is unknow
     size_t getSize() const;
 
     /// @brief Serialize Transaction
     /// @param buffer buffer for serialization
     /// @param offset offset to the buffer
+    /// @exception if buffer has not enough size to serialize a transaction or if transaction is not hashed so it does not have a IDHash or if transaction is not signed so size of the signature is unknow
     void serialize(byteBuffer &buffer, size_t &offset) const;
 
     /// @brief Deserialize Transaction
     /// @param buffer buffer with serialized data
     /// @param offset offset to the buffer
+    /// @exception if buffer has not enough size to deserialize a transaction
     void deserialize(const byteBuffer &buffer, size_t &offset);
 };
 

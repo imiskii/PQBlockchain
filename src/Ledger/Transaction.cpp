@@ -28,7 +28,6 @@ namespace PQB{
         if (IDHash.IsNull())
             throw PQB::Exceptions::Transaction("Sign: transaction does not have an ID!");
         SignAlgorithmPtr s = Signer::GetInstance();
-        /// @todo handle sign exception
         signatureSize = s->sign(signature, IDHash.data(), IDHash.size(), privateKey);
 
     }
@@ -49,10 +48,10 @@ namespace PQB{
     }
 
     void Transaction::serialize(byteBuffer &buffer, size_t &offset) const{
-        if (signatureSize == 0)
-            throw PQB::Exceptions::Transaction("Serialization: transaction is not sign!");
         if (IDHash.IsNull())
             throw PQB::Exceptions::Transaction("Serialization: transaction does not have an ID!");
+        if ((buffer.size() - offset) < getSize())
+            throw PQB::Exceptions::Transaction("Serialization: serialization buffer has not enough size to serialize the transaction");
         TransactionData::serialize(buffer, offset);
         serializeField(buffer, offset, IDHash);
         serializeField(buffer, offset, signatureSize);
@@ -61,9 +60,13 @@ namespace PQB{
     }
 
     void Transaction::deserialize(const byteBuffer &buffer, size_t &offset){
+        if ((buffer.size() - offset) < (TransactionData::getSize() + sizeof(IDHash) + sizeof(signatureSize)))
+            throw PQB::Exceptions::Transaction("Deserialization: buffer has not enough size to deserialize the transaction");
         TransactionData::deserialize(buffer, offset);
         deserializeField(buffer, offset, IDHash);
         deserializeField(buffer, offset, signatureSize);
+        if ((buffer.size() - offset) < signatureSize)
+            throw PQB::Exceptions::Transaction("Deserialization: buffer has not enough size to deserialize the transaction");
         signature.resize(signatureSize);
         std::memcpy(signature.data(), buffer.data() + offset, signatureSize);
         offset += signatureSize;
