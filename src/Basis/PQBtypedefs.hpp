@@ -18,7 +18,7 @@
 namespace PQB{
     typedef unsigned char byte;     ///< 8-bit unsigned datatype
     typedef uint32_t cash;          ///< 4-byte datatype respresenting amount of currency
-    typedef uint64_t timestamp;     ///< 8-byte datatype representing a timestamp 
+    typedef int64_t timestamp;     ///< 8-byte datatype representing a timestamp 
     typedef std::vector<PQB::byte> byteBuffer; ///< buffer with bytes
 }
 

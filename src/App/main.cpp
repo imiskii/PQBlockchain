@@ -19,6 +19,12 @@ int main(int argc, char *argv[]){
     // ArgParser &a = ArgParser::GetInstance(argc, argv);
     // args_t parsedArgs = a.getArguments();
     
+    // Open database and load config
+    // init wallet
+    // init connections, server, UNL connections
+    // init and run consensus or server processor (instead of consensus)
+    // run console
+
     PQB::Console console;
     PQB::Controller controller(&console);
     console.setCommandListener(&controller);

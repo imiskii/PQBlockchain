@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <ctime>
 #include <memory>
+#include "Blob.hpp"
 #include "PQBtypedefs.hpp"
 
 namespace PQB{

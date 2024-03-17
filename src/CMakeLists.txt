@@ -8,5 +8,6 @@ add_subdirectory(Nodes)
 add_subdirectory(Storage)
 add_subdirectory(Network)
 add_subdirectory(Consensus)
+add_subdirectory(Wallet)
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/Basis)
