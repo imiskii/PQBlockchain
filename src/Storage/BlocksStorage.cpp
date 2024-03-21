@@ -37,32 +37,48 @@ void BlocksStorage::openDatabase(){
     }
 }
 
-Block *BlocksStorage::getBlock(byte64_t &blockHash){
+Block *BlocksStorage::getBlock(const byte64_t &blockHash){
     std::string readValue;
     leveldb::Status status = db->Get(leveldb::ReadOptions(), leveldb::Slice((char*)blockHash.data(), blockHash.size()), &readValue);
     if (status.IsNotFound()){
         return nullptr;
     } else if (!status.ok()){
-        /// @todo make log
-        // throw PQB::Exceptions::Storage(status.ToString());
+        /// @todo make log -> status.ToString()
         return nullptr;
     }
     byteBuffer buffer(readValue.begin(), readValue.end());
     Block *newBlock = new Block();
-    newBlock->deserialize(buffer);
+    size_t offset = 0;
+    newBlock->deserialize(buffer, offset);
     return newBlock;
 }
 
-bool BlocksStorage::setBlock(Block &block){
+bool BlocksStorage::getRawBlock(const byte64_t &blockHash, byteBuffer &buffer){
+    std::string readValue;
+    leveldb::Status status = db->Get(leveldb::ReadOptions(), leveldb::Slice((char*)blockHash.data(), blockHash.size()), &readValue);
+    if (status.IsNotFound()){
+        return false;
+    } else if (!status.ok()){
+        /// @todo make log -> status.ToString()
+        return false;
+    }
+    buffer.resize(readValue.size());
+    std::memcpy(buffer.data(), readValue.data(), readValue.size());
+    return false;
+}
+
+bool BlocksStorage::setBlock(const Block &block)
+{
     byteBuffer buffer;
-    block.serialize(buffer);
+    size_t offset = 0;
+    block.serialize(buffer, offset);
     byte64_t blockHash = block.getBlockHash();
     if (setBlock(blockHash, buffer))
         return true;
     return false;
 }
 
-bool BlocksStorage::setBlock(byte64_t &blockHash, byteBuffer &buffer){
+bool BlocksStorage::setBlock(const byte64_t &blockHash, const byteBuffer &buffer){
     leveldb::Slice value((char*) buffer.data(), buffer.size());
     leveldb::Status status = db->Put(leveldb::WriteOptions(), leveldb::Slice((char*)blockHash.data(), blockHash.size()), value);
     if (!status.ok())

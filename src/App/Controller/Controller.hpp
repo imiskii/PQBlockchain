@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include "PQBExceptions.hpp"
 #include "Interface.hpp"
+#include "PQBModel.hpp"
 #include "Command.hpp"
 
 namespace PQB{
@@ -22,13 +23,14 @@ namespace PQB{
 
 class Controller : public CommandListener{
 public:
-    Controller(Console* commandConsole) : console(commandConsole) {}
+    Controller(Console* commandConsole, PQBModel *workingModel) : console(commandConsole), model(workingModel) {}
     ~Controller();
     
     void emitCommand(std::string commandLine) const override;
     
 private:
-    Console* console;
+    Console *console;
+    PQBModel *model;
 
     /**
      * @brief Parse command line by spaces

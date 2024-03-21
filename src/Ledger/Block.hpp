@@ -134,13 +134,15 @@ public:
 
     /// @brief Serialize Block
     /// @param buffer buffer for serialization
+    /// @param offset offset to the buffer
     /// @exception if buffer has not enough size for the block serialization or importnat fields in BlockHeader are not specified (such as transactionsMerkleRootHash, previousBlockHash, and accountBalanceMerkleRootHash)
-    void serialize(byteBuffer &buffer) const;
+    void serialize(byteBuffer &buffer, size_t &offset) const;
 
     /// @brief Deserialize Block
     /// @param buffer buffer with serialized data
+    /// @param offset offset to the buffer
     /// @exception if buffer has not enough size for the block deserialization
-    void deserialize(const byteBuffer &buffer);
+    void deserialize(const byteBuffer &buffer, size_t &offset);
 };
 
 

@@ -19,6 +19,7 @@
 #include "leveldb/slice.h"
 #include "leveldb/write_batch.h"
 #include "PQBtypedefs.hpp"
+#include "Account.hpp"
 #include "Blob.hpp"
 #include "Transaction.hpp"
 #include "Serialize.hpp"
@@ -31,13 +32,6 @@ namespace PQB{
 
 class AccountBalanceStorage{
 public:
-
-    /// @brief Structure representing data about an account balance
-    struct BalanceData{
-        byteBuffer publicKey;
-        cash balance;
-        uint32_t txSequence;
-    };
 
     AccountBalanceStorage();
     ~AccountBalanceStorage();
@@ -53,11 +47,11 @@ public:
      * @brief Query a BalanceData structure from the database
      * 
      * @param walletID ID of account to query
-     * @param bd [out] output BalanceData structure
+     * @param acc [out] output balance data to Account object
      * @return true if wallet was found
      * @return false if wallet was not found or if database Get operation fails
      */
-    bool getBalance(byte64_t &walletID, BalanceData &bd) const;
+    bool getBalance(const byte64_t &walletID, AccountBalance &acc) const;
 
     /**
      * @brief Put a BalanceData structure to the database.
@@ -65,11 +59,11 @@ public:
      * if wallet ID is not in the database it will put new value into the database under walletID key
      * 
      * @param walletID ID of account to which assign the data
-     * @param bd balance data structure to put into database
+     * @param acc Account data to put into the database
      * @return true if operation was successful
      * @return false if operation fails
      */
-    bool setBalance(byte64_t &walletID, BalanceData &bd);
+    bool setBalance(const byte64_t &walletID, AccountBalance &acc);
 
     /**
      * @brief Update all account balances base on given block transactions set
@@ -86,33 +80,6 @@ public:
      * @return byte64_t root hash of account balances
      */
     byte64_t getAccountsMerkleRootHash();
-
-    /// @brief Get size of a BalanceData elements (fields) in bytes
-    static size_t getSizeOfBalanceData(){
-        return sizeof(BalanceData::balance) + sizeof(BalanceData::txSequence) + Signer::GetInstance()->getPublicKeySize();
-    }
-
-    /**
-     * @brief Serialize BalanceData structure so it can be put into database
-     * 
-     * @param buffer buffer for serialization
-     * @param offset offset to the buffer
-     * @param bd Balance data to serialize
-     * 
-     * @exception If buffer has not enough space for serialized data. This method does not resize the buffer. The buffer has to have enough space, USE getSizeOfBalanceData().
-     */
-    static void serializeBalanceData(byteBuffer &buffer, size_t &offset, BalanceData &bd);
-
-    /**
-     * @brief Deserialize BalanceData queried from the database
-     * 
-     * @param buffer buffer for deserialization
-     * @param offset offset to the buffer
-     * @return BalanceData deserialized balance data
-     * 
-     * @exception If buffer has smaller size then size of BalanceData structure
-     */
-    static BalanceData deserializeBalanceData(byteBuffer &buffer, size_t &offset);
 
 protected:
     leveldb::DB* db; ///< Instance of LevelDB database for Accounts
@@ -135,9 +102,6 @@ private:
 class AccountAddressStorage{
 public:
 
-    /// @brief Maximum number of network addresses that can be stored for one account
-    static const size_t MAX_ACCOUNT_ADDRESSES = 10;
-
     AccountAddressStorage();
     ~AccountAddressStorage();
 
@@ -152,11 +116,11 @@ public:
      * @brief Query an account addresses from the database
      * 
      * @param walletID ID of account to query
-     * @param addresses [out] output vector with addresses
+     * @param acc [out] output addresses to Account object
      * @return true if wallet was found
      * @return false if wallet was not found
      */
-    bool getAddresses(byte64_t &walletID, std::vector<std::string> &addresses) const;
+    bool getAddresses(const byte64_t &walletID, AccountAddress &acc) const;
 
     /**
      * @brief Put an account addresses to the database.
@@ -164,39 +128,12 @@ public:
      * if wallet ID is not in the database it will put new value into the database under walletID key
      * 
      * @param walletID ID of account to which assign the data
-     * @param addresses vector of addresses to put into the database
+     * @param acc Account addresses to put into the database
      * @return true if operation was successful
      * @return false if operation fails
      */
-    bool setAddresses(byte64_t &walletID, std::vector<std::string> &addresses);
+    bool setAddresses(const byte64_t &walletID, AccountAddress &acc);
 
-    /// @brief Get size of addresses for serialization (size of addresses when serialized) in bytes
-    static size_t getAddressesSize(std::vector<std::string> &addresses);
-
-    /**
-     * @brief Serialize vector of an account addresses so it can be put into database. Maximum number of serialized addresses is 10.
-     * If given vector of addresses include more than 10 addresses, remaining addresses are ignored.
-     * Serialization is in format [uint32_t number of addresses] <[address]'\n',...>. The first field is number of serialized addresses, after that
-     * starts the bytes of the first address. Addresses are separated with '\0' byte.
-     * 
-     * @param buffer buffer for serialization
-     * @param offset offset to the buffer
-     * @param addresses account addresses to serialize
-     * 
-     * @exception If buffer has not enough space for serialized data. This method does not resize the buffer. The buffer has to have enough space, USE getAddressesSize().
-     */
-    static void serializeAddresses(byteBuffer &buffer, size_t &offset, std::vector<std::string> &addresses);
-
-    /**
-     * @brief Deserialize vector of an account addresses queried from the database
-     * 
-     * @param buffer buffer for deserialization
-     * @param offset offset to the buffer
-     * @return vector with deserialized account addresses. In case of failed deserialization vector of addresses will be empty.
-     * 
-     * @exception If buffer can not be deserialized because there is not enough space for field with number of addresses, which length is sizeof(uint32_t)
-     */
-    static std::vector<std::string> deserializeAddresses(byteBuffer &buffer, size_t &offset);
 
 protected:
     leveldb::DB* db; ///< Instance of LevelDB database for Accounts
@@ -214,12 +151,6 @@ private:
  */
 class AccountStorage{
 public:
-
-    /// @brief Structure representing account information
-    struct AccountData{
-        AccountBalanceStorage::BalanceData bd;
-        std::vector<std::string> addresses;
-    };
     
     AccountStorage();
     ~AccountStorage();
@@ -235,39 +166,21 @@ public:
      * @brief Query an account from the database
      * 
      * @param walletID ID of an account
-     * @param ad [out] Queried account data
+     * @param acc [out] Queried Account
      * @return true if operation was successful
      * @return false if operation fails or wallet was not found
      */
-    bool getAccount(byte64_t &walletID, AccountData &ad);
+    bool getAccount(const byte64_t &walletID, Account &acc);
 
     /**
      * @brief Set the Account object
      * 
      * @param walletID ID of an account
-     * @param ad AccoundData structure to put into database
+     * @param acc Account to put into database
      * @return true if operation was successful
      * @return false if operation fails
      */
-    bool setAccount(byte64_t &walletID, AccountData &ad);
-
-    /**
-     * @brief Serialize AccountData ad into the given buffer. Data are serialized as <[balance data][addresses]>
-     * 
-     * @param buffer buffer for serialization
-     * @param ad AccountData structure to serialize
-     */
-    void serializeAccount(byteBuffer &buffer, AccountData &ad);
-
-    /**
-     * @brief Deserialize account data from byte buffer
-     * 
-     * @param buffer buffer with serialized data
-     * @return AccountData deserialized account data
-     * 
-     * @exception if serialized data was corrupted
-     */
-    AccountData deserializeAccount(byteBuffer &buffer);
+    bool setAccount(const byte64_t &walletID, Account &acc);
 
 
     AccountBalanceStorage *blncDB; ///< balance database

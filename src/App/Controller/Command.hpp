@@ -14,6 +14,7 @@
 #include <vector>
 #include <string>
 #include "Interface.hpp"
+#include "PQBModel.hpp"
 
 namespace PQB
 {
@@ -30,13 +31,18 @@ public:
     void setOutputConsole(Console* console){
         outputConsole = console;
     }
+
+    void setModel(PQBModel *workingModel){
+        model = workingModel;
+    }
     /// @brief Check given command arguments 
     virtual bool CheckArguments() const = 0;
     /// @brief Execute backend logic behind the command and get result to console
     virtual void Behavior() const = 0;
 protected:
     CommandArgs args; ///< Command arguments
-    Console* outputConsole;
+    Console *outputConsole;
+    PQBModel *model;
 };
 
 
@@ -70,7 +76,7 @@ public:
      * @param console console where result of command will be printed
      * @param commandArguments arguments of the command
      */
-    void Execute(Console* console, CommandArgs& commandArguments);
+    void Execute(Console* console, PQBModel *model, CommandArgs& commandArguments);
 };
 
 

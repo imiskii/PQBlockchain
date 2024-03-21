@@ -98,14 +98,12 @@ namespace PQB{
         return BlockHeader::getSize() + BlockBody::getSize();
     }
 
-    void Block::serialize(byteBuffer &buffer) const{
-        size_t offset = 0;
+    void Block::serialize(byteBuffer &buffer, size_t &offset) const{
         BlockHeader::serialize(buffer, offset);
         BlockBody::serialize(buffer, offset);
     }
 
-    void Block::deserialize(const byteBuffer &buffer){
-        size_t offset = 0;
+    void Block::deserialize(const byteBuffer &buffer, size_t &offset){
         BlockHeader::deserialize(buffer, offset);
         BlockBody::deserialize(buffer, offset);
     }

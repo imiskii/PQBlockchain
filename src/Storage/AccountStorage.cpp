@@ -34,27 +34,26 @@ void AccountBalanceStorage::Open(){
     }
 }
 
-bool AccountBalanceStorage::getBalance(byte64_t &walletID, BalanceData &bd) const{
+bool AccountBalanceStorage::getBalance(const byte64_t &walletID, AccountBalance &acc) const{
     std::string readValue;
     leveldb::Status status = db->Get(leveldb::ReadOptions(), leveldb::Slice((char*)walletID.data(), walletID.size()), &readValue);
     if (status.IsNotFound()){
         return false;
     } else if (!status.ok()){
-        /// @todo make log
-        // throw PQB::Exceptions::Storage(status.ToString());
+        /// @todo make log -> status.ToString()
         return false;
     }
     byteBuffer buffer(readValue.begin(), readValue.end());
     size_t offset = 0;
-    bd = deserializeBalanceData(buffer, offset);
+    acc.deserializeAccountBalance(buffer, offset);
     return true;
 }
 
-bool AccountBalanceStorage::setBalance(byte64_t &walletID, BalanceData &bd){
+bool AccountBalanceStorage::setBalance(const byte64_t &walletID, AccountBalance &acc){
     byteBuffer buffer;
-    buffer.resize(getSizeOfBalanceData());
+    buffer.resize(acc.getAccountBalanceSize());
     size_t offset = 0;
-    serializeBalanceData(buffer, offset, bd);
+    acc.serializeAccountBalance(buffer, offset);
     leveldb::Slice value((char*) buffer.data(), buffer.size());
     leveldb::Status status = db->Put(leveldb::WriteOptions(), leveldb::Slice((char*)walletID.data(), walletID.size()), value);
     if (!status.ok())
@@ -67,22 +66,22 @@ void AccountBalanceStorage::setBalancesByTxSet(std::set<TransactionPtr, Transact
     leveldb::WriteBatch batch;
     leveldb::Status status;
     for (const auto &tx : txDiffs){
-        BalanceData blnc;
-        if (!getBalance(*tx.second.id, blnc)){
+        AccountBalance acc;
+        if (!getBalance(*tx.second.id, acc)){
             std::string err = "Set Balances: wallet ID: " + tx.first + " is not in the database!"; 
             throw PQB::Exceptions::Storage(err);
         }
 
-        blnc.balance += tx.second.balanceDiff;
+        acc.balance += tx.second.balanceDiff;
         // if txSequence is 0, it means that this this wallet was just receiving resources. So sequence number is not changing
         if (tx.second.txSequence != 0)
-            blnc.txSequence = tx.second.txSequence;
+            acc.txSequence = tx.second.txSequence;
 
         byteBuffer buffer;
-        buffer.resize(getSizeOfBalanceData());
+        buffer.resize(acc.getAccountBalanceSize());
         size_t offset = 0;
 
-        serializeBalanceData(buffer, offset, blnc);
+        acc.serializeAccountBalance(buffer, offset);
         leveldb::Slice value = leveldb::Slice((char*) buffer.data(), buffer.size());
         batch.Put(leveldb::Slice((char*)tx.second.id, tx.second.id->size()), value);
     }
@@ -128,29 +127,6 @@ std::unordered_map<std::string, AccountBalanceStorage::AccountDifference> Accoun
     return txDiffs;
 }
 
-void AccountBalanceStorage::serializeBalanceData(byteBuffer &buffer, size_t &offset, BalanceData &bd){
-    if ((buffer.size() - offset) < getSizeOfBalanceData())
-        throw PQB::Exceptions::Storage("Seralization: buffer is smaller than BalanceData structure! Can not serialize!");
-
-    std::memcpy(buffer.data() + offset, bd.publicKey.data(), bd.publicKey.size());
-    offset += bd.publicKey.size();
-    serializeField(buffer, offset, bd.balance);
-    serializeField(buffer, offset, bd.txSequence);
-}
-
-AccountBalanceStorage::BalanceData AccountBalanceStorage::deserializeBalanceData(byteBuffer &buffer, size_t &offset){
-    if ((buffer.size() - offset) < getSizeOfBalanceData())
-        throw PQB::Exceptions::Storage("Deseralization: buffer is smaller than BalanceData structure! Can not deserialize!");
-
-    BalanceData bd;
-    bd.publicKey.resize(Signer::GetInstance()->getPublicKeySize());
-    std::memcpy(bd.publicKey.data(), buffer.data() + offset, bd.publicKey.size());
-    offset += bd.publicKey.size();
-    deserializeField(buffer, offset, bd.balance);
-    deserializeField(buffer, offset, bd.txSequence);
-    return bd;
-}
-
 /*** AccountAddressStorage ***/
 
 AccountAddressStorage::AccountAddressStorage(){
@@ -170,7 +146,7 @@ void AccountAddressStorage::Open(){
     }
 }
 
-bool AccountAddressStorage::getAddresses(byte64_t &walletID, std::vector<std::string> &addresses) const{
+bool AccountAddressStorage::getAddresses(const byte64_t &walletID, AccountAddress &acc) const{
     std::string readValue;
     leveldb::Status status = db->Get(leveldb::ReadOptions(), leveldb::Slice((char*)walletID.data(), walletID.size()), &readValue);
     if (status.IsNotFound()){
@@ -182,67 +158,20 @@ bool AccountAddressStorage::getAddresses(byte64_t &walletID, std::vector<std::st
     }
     byteBuffer buffer(readValue.begin(), readValue.end());
     size_t offset = 0;
-    addresses = deserializeAddresses(buffer, offset);
+    acc.deserializeAccountAddress(buffer, offset);
     return true;
 }
 
-bool AccountAddressStorage::setAddresses(byte64_t &walletID, std::vector<std::string> &addresses){
+bool AccountAddressStorage::setAddresses(const byte64_t &walletID, AccountAddress &acc){
     byteBuffer buffer;
-    buffer.resize(getAddressesSize(addresses));
+    buffer.resize(acc.getAccountAddressSize());
     size_t offset = 0;
-    serializeAddresses(buffer, offset, addresses);
+    acc.serializeAccountAddress(buffer, offset);
     leveldb::Slice value((char*) buffer.data(), buffer.size());
     leveldb::Status status = db->Put(leveldb::WriteOptions(), leveldb::Slice((char*)walletID.data(), walletID.size()), value);
     if (!status.ok())
         return false;
     return true;
-}
-
-size_t AccountAddressStorage::getAddressesSize(std::vector<std::string> &addresses){
-    size_t size = sizeof(uint32_t);
-    for (const auto &addr : addresses){
-        size += (sizeof(uint8_t) + addr.size());
-    }
-    return size;
-}
-
-void AccountAddressStorage::serializeAddresses(byteBuffer &buffer, size_t &offset, std::vector<std::string> &addresses){
-    uint32_t nAddresses = (addresses.size() > MAX_ACCOUNT_ADDRESSES ? MAX_ACCOUNT_ADDRESSES : addresses.size());
-    if ((buffer.size() - offset) < getAddressesSize(addresses))
-        throw PQB::Exceptions::Storage("Seralization: buffer is smaller than addresses! Can not serialize!");
-    serializeField(buffer, offset, nAddresses);
-    uint8_t splitMark = '\0';
-    size_t nSer = 0;
-    while (nSer < MAX_ACCOUNT_ADDRESSES && nSer < addresses.size()){
-        std::memcpy(buffer.data() + offset, addresses[nSer].data(), addresses[nSer].size());
-        offset += addresses[nSer].size();
-        serializeField(buffer, offset, splitMark);
-        nSer++;
-    }
-}
-
-std::vector<std::string> AccountAddressStorage::deserializeAddresses(byteBuffer &buffer, size_t &offset){
-    std::vector<std::string> addresses;
-    uint32_t nAddresses;
-    if ((buffer.size() - offset) < sizeof(nAddresses))
-        throw PQB::Exceptions::Storage("Deseralization: buffer is too small to deserialize addresses!");
-    deserializeField(buffer, offset, nAddresses);
-    if (nAddresses > MAX_ACCOUNT_ADDRESSES){
-        return addresses;
-    }
-    for (size_t i = 0; i < nAddresses; i++){
-        std::string address;
-        while (buffer.size() >= offset){
-            if (buffer[offset] == '\0'){
-                offset += 1;
-                break;
-            }
-            address.push_back(buffer[offset]);
-            offset += 1;
-        }
-        addresses.push_back(address);
-    }
-    return addresses;
 }
 
 /*** AccountStorage ***/
@@ -262,35 +191,20 @@ void AccountStorage::openDatabases(){
     addrDB->Open();
 }
 
-bool AccountStorage::getAccount(byte64_t &walletID, AccountData &ad){
-    if (!blncDB->getBalance(walletID, ad.bd))
+bool AccountStorage::getAccount(const byte64_t &walletID, Account &acc){
+    if (!blncDB->getBalance(walletID, acc))
         return false;
-    if (!addrDB->getAddresses(walletID, ad.addresses))
-        return false;
-    return true;
-}
-
-bool AccountStorage::setAccount(byte64_t &walletID, AccountData &ad){
-    if (!blncDB->setBalance(walletID, ad.bd))
-        return false;
-    if (!addrDB->setAddresses(walletID, ad.addresses))
+    if (!addrDB->getAddresses(walletID, acc))
         return false;
     return true;
 }
 
-void AccountStorage::serializeAccount(byteBuffer &buffer, AccountData &ad){
-    size_t offset = 0;
-    buffer.resize(blncDB->getSizeOfBalanceData() + addrDB->getAddressesSize(ad.addresses));
-    blncDB->serializeBalanceData(buffer, offset, ad.bd);
-    addrDB->serializeAddresses(buffer, offset, ad.addresses);
-}
-
-AccountStorage::AccountData AccountStorage::deserializeAccount(byteBuffer &buffer){
-    AccountData ad;
-    size_t offset = 0;
-    ad.bd = blncDB->deserializeBalanceData(buffer, offset);
-    ad.addresses = addrDB->deserializeAddresses(buffer, offset);
-    return ad;
+bool AccountStorage::setAccount(const byte64_t &walletID, Account &acc){
+    if (!blncDB->setBalance(walletID, acc))
+        return false;
+    if (!addrDB->setAddresses(walletID, acc))
+        return false;
+    return true;
 }
 
 } // namespace PQB

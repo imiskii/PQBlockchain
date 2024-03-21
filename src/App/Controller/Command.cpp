@@ -13,9 +13,10 @@
 
 namespace PQB{
 
-    void CommandCreator::Execute(Console* console, CommandArgs& commandArguments){
+    void CommandCreator::Execute(Console* console, PQBModel *model, CommandArgs& commandArguments){
         Command* cmd = this->FactoryMethod();
         cmd->setOutputConsole(console);
+        cmd->setModel(model);
         cmd->setArguments(commandArguments);
         if (cmd->CheckArguments()){
             cmd->Behavior();

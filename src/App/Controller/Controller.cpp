@@ -30,7 +30,7 @@ namespace PQB{
         
         parsedCommand.erase(parsedCommand.begin()); // remove first argument (which should be always command name)
 
-        command->Execute(console, parsedCommand);
+        command->Execute(console, model, parsedCommand);
     }
 
     std::vector<std::string> Controller::__parseCommand(std::string& commandLine) const{

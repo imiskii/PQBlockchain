@@ -11,8 +11,31 @@
 
 #pragma once
 
+#include <map>
+#include "PQBtypedefs.hpp"
+#include "Blob.hpp"
+#include "Transaction.hpp"
+#include "Block.hpp"
 
 namespace PQB{
+
+
+class Consensus{
+public:
+
+    bool isTransactionInPool(const byte64_t tx_id) const;
+
+    TransactionPtr getTransactionFromPool(const byte64_t tx_id) const;
+
+    void addTransactionToPool(TransactionPtr tx);
+
+    void removeTransactionFromPool(const byte64_t tx_id);
+
+private:
+
+std::map<byte64_t, TransactionPtr> txPool;
+
+};
 
 
 /**
@@ -21,7 +44,7 @@ namespace PQB{
  * bot thransations stay walid after this check but after final check just the first transaction remain valid.
  * 
  */
-void checkTranscation();
+//void checkTranscation();
 
 /**
  * Iterate trough consensus transaction pool. Transactions have to by ordered by sender ID and then by its sequence number (if there are multiple
@@ -38,7 +61,7 @@ void checkTranscation();
  * |-> check if senderID is not local walletID if so take transaction ID and processed it in wallet
  * 
  */
-void finalTransactionsCheck();
+//void finalTransactionsCheck();
 
 
 } // namespace PQB

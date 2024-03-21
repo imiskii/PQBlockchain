@@ -59,10 +59,11 @@ int main(int argc, char *argv[]){
     PQB::AccountStorage accStorage;
     accStorage.openDatabases();
 
-    PQB::AccountStorage::AccountData ad1;
-    ad1.bd.balance = 10000;
-    ad1.bd.txSequence = 0;
-    ad1.bd.publicKey = wallet->getPublicKey();
+    //PQB::AccountStorage::AccountData ad1;
+    PQB::Account ad1;
+    ad1.balance = 10000;
+    ad1.txSequence = 0;
+    ad1.publicKey = wallet->getPublicKey();
     ad1.addresses.push_back("127.0.0.1");
     ad1.addresses.push_back("127.0.0.2");
     ad1.addresses.push_back("127.0.0.3");
@@ -75,10 +76,10 @@ int main(int argc, char *argv[]){
     ad1.addresses.push_back("127.0.0.10");
     ad1.addresses.push_back("127.0.0.11");
 
-    PQB::AccountStorage::AccountData ad2;
-    ad2.bd.balance = 0;
-    ad2.bd.txSequence = 0;
-    ad2.bd.publicKey = pk2;
+    PQB::Account ad2;
+    ad2.balance = 0;
+    ad2.txSequence = 0;
+    ad2.publicKey = pk2;
     ad2.addresses.push_back("127.0.0.1");
 
     accStorage.setAccount(wallet->getWalletID(), ad1);
@@ -114,8 +115,9 @@ int main(int argc, char *argv[]){
     byte64_t bHash = b.getBlockHash();
 
     PQB::byteBuffer buffer;
+    size_t offset = 0;
     buffer.resize(b.size);
-    b.serialize(buffer);
+    b.serialize(buffer, offset);
 
     bStorage.setBlock(bHash, buffer);
     PQB::Block *bb = bStorage.getBlock(bHash);
@@ -134,15 +136,17 @@ int main(int argc, char *argv[]){
     std::cout << "Block 2 - " << "account hash: " << bb->accountBalanceMerkleRootHash.getHex() << std::endl;
     std::cout << "Block 2 - " << "hash: " << bbHash.getHex() << std::endl;
 
+    ad1.setNull();
+    ad2.setNull();
     accStorage.getAccount(wallet->getWalletID(), ad1);
     accStorage.getAccount(hash2, ad2);
 
-    std::cout << "Account 1 - " << "balance: " << ad1.bd.balance << std::endl;
-    std::cout << "Account 1 - " << "seq. num.: " << ad1.bd.txSequence << std::endl;
+    std::cout << "Account 1 - " << "balance: " << ad1.balance << std::endl;
+    std::cout << "Account 1 - " << "seq. num.: " << ad1.txSequence << std::endl;
     std::cout << "Account 1 - " << "Address: " << ad1.addresses.at(0) << std::endl << std::endl;
 
-    std::cout << "Account 2 - " << "balance: " << ad2.bd.balance << std::endl;
-    std::cout << "Account 2 - " << "seq. num.: " << ad2.bd.txSequence << std::endl;
+    std::cout << "Account 2 - " << "balance: " << ad2.balance << std::endl;
+    std::cout << "Account 2 - " << "seq. num.: " << ad2.txSequence << std::endl;
     std::cout << "Account 2 - " << "Address: " << ad2.addresses.at(0) << std::endl << std::endl;
 
     for (const auto &addr : ad1.addresses){
