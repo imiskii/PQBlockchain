@@ -10,6 +10,11 @@ add_subdirectory(PQClean)
 add_subdirectory(googletest)
 
 ##
+# spdlog
+# use: spdlog
+add_subdirectory(spdlog)
+
+##
 # Crypto++ library (with modern cmake)
 # use: cryptopp
 add_subdirectory(cryptopp-cmake)
