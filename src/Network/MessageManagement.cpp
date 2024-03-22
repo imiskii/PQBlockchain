@@ -127,17 +127,23 @@ namespace PQB
         return false;
     }
 
-    void ConnectionManager::broadcastMessageToAllPeers(Message *message){
+    void ConnectionManager::broadcastMessageToAllPeers(const socket_t connectionID, std::string &peerID, Message *message){
         for (const auto &conn : connectionPool){
-            if (conn.second->isConfirmed)
-                conn.second->sendMessage(message);
+            if (conn.second->isConfirmed){
+                if (conn.first != connectionID && conn.second->connID != peerID){
+                    conn.second->sendMessage(message);
+                }
+            }
         }
     }
 
-    void ConnectionManager::broadcastMessageToUNLPeers(Message *message){
+    void ConnectionManager::broadcastMessageToUNLPeers(const socket_t connectionID, std::string &peerID, Message *message){
         for (const auto &conn : connectionPool){
-            if (conn.second->isUNL && conn.second->isConfirmed)
-                conn.second->sendMessage(message);
+            if (conn.second->isUNL && conn.second->isConfirmed){
+                if (conn.first != connectionID && conn.second->connID != peerID){
+                    conn.second->sendMessage(message);
+                }
+            }
         }
     }
 
@@ -276,6 +282,7 @@ namespace PQB
     }
 
     void ConnectionManager::manageConnections(){
+        PQB_LOG_INFO("CONNECTION MANAGER", "Connection managing thread started");
         int changed;
         while (connectionManagerRunFlag)
         {
@@ -326,7 +333,7 @@ namespace PQB
 
     void ConnectionManager::processMessageQueueRequests(){
         std::lock_guard<std::mutex> lock(messageRequestQueueMutex);
-        while (messageRequestQueue.empty()){
+        while (!messageRequestQueue.empty()){
             MessageRequest_t req = messageRequestQueue.front();
             messageRequestQueue.pop();
 
@@ -336,10 +343,10 @@ namespace PQB
                 sendMessageToPeer(req.connectionID, req.peerID, req.message);
                 break;
             case MessageRequestType::UNLCAST:
-                broadcastMessageToUNLPeers(req.message);
+                broadcastMessageToUNLPeers(req.connectionID, req.peerID, req.message);
                 break;
             case MessageRequestType::BROADCAST:
-                broadcastMessageToAllPeers(req.message);
+                broadcastMessageToAllPeers(req.connectionID, req.peerID, req.message);
                 break;           
             default:
                 break;
@@ -349,7 +356,7 @@ namespace PQB
 
     void ConnectionManager::processConnectionQueueRequests(){
         std::lock_guard<std::mutex> lock(connectionRequestQueueMutex);
-        while (connectionRequestQueue.empty()){
+        while (!connectionRequestQueue.empty()){
             ConnectionRequest_t req = connectionRequestQueue.front();
             connectionRequestQueue.pop();
             byte64_t peerHash;
@@ -367,8 +374,8 @@ namespace PQB
 /************************************************************************/
 
 
-    MessageProcessor::MessageProcessor(ConnectionManager *connectionManager, AccountStorage *accountStorage, BlocksStorage *blockStorage, Consensus *consensusAlgorithm, Wallet *localWallet)
-    : connMng(connectionManager), accStor(accountStorage), blockStor(blockStorage), consensus(consensusAlgorithm), wallet(localWallet){
+    MessageProcessor::MessageProcessor(AccountStorage *accountStorage, BlocksStorage *blockStorage, Consensus *consensusAlgorithm, Wallet *localWallet)
+    : connMng(nullptr), accStor(accountStorage), blockStor(blockStorage), consensus(consensusAlgorithm), wallet(localWallet){
         processingRun = true;
         processingThread = std::jthread(&MessageProcessor::messageProcessor, this);
     }
@@ -380,13 +387,40 @@ namespace PQB
             processingThread.join();
     }
 
-    void MessageProcessor::processMessage(int connectionID, std::string &peerID, bool isUNL, Message *message){
-        message_item_t msgi = {.connection_id=connectionID, .peer_id=peerID, .isUNL=isUNL, .msg=message};
-        if (!earlyProcessing(msgi)){
-            addMessageToProcessingQueue(msgi);
+    void MessageProcessor::processMessage(int connectionID, std::string &peerID, bool isUNL, Message *message)
+    {
+        if (connMng != nullptr){
+            message_item_t msgi = {.connection_id=connectionID, .peer_id=peerID, .isUNL=isUNL, .msg=message};
+            if (!earlyProcessing(msgi)){
+                addMessageToProcessingQueue(msgi);
+            }
         }
     }
 
+    bool MessageProcessor::checkTransaction(const TransactionPtr tx){
+        // Check structure of transaction
+        if (!tx->checkTransactionStructure()){
+            return false;
+        }
+        // Check if sender and receiver are not the same
+        if (tx->senderWalletAddress == tx->receiverWalletAddress){
+            return false;
+        }
+        AccountBalance accBalance;
+        // Check if sender exists
+        if (!accStor->blncDB->getBalance(tx->senderWalletAddress, accBalance)){
+            return false;
+        }
+        // Check transaction signature
+        if (!tx->verify(accBalance.publicKey)){                    
+            return false;        
+        }
+        // Check if receiver exists
+        if (!accStor->blncDB->getBalance(tx->receiverWalletAddress, accBalance)){
+            return false;
+        }
+        return true;
+    }
 
     void MessageProcessor::addMessageToProcessingQueue(message_item_t &msgi){
         std::lock_guard<std::mutex> lock(processingQueueMutex);
@@ -395,6 +429,7 @@ namespace PQB
     }
 
     void MessageProcessor::messageProcessor(){
+        PQB_LOG_INFO("MESSAGE PROCESSOR", "Message processing thread started");
         while (processingRun)
         {
             std::unique_lock<std::mutex> lock(processingQueueMutex);
@@ -426,22 +461,22 @@ namespace PQB
         switch (msgi.msg->getType())
         {
         case MessageType::TX:
-
+            procTransactionMessage(msgi);
             break;
         case MessageType::PROPOSAL:
-
+            procProposalMessage(msgi);
             break;
         case MessageType::BLOCK:
-
+            procBlockMessage(msgi);
             break;
         case MessageType::ACCOUNT:
-
+            procAccountMessage(msgi);
             break;
         case MessageType::INV:
-
+            procInvMessage(msgi);
             break;
         case MessageType::GETDATA:
-
+            procGetDataMessage(msgi);
             break;
         default:
             break;
@@ -466,16 +501,11 @@ namespace PQB
         if (msg != nullptr){
             TransactionPtr msgData = std::make_shared<Transaction>();
             msg->deserialize(msgData.get());
-            /// @todo add transaction check (check fileds of the transaction)
-            AccountBalance accBalance;
-            if (accStor->blncDB->getBalance(msgData->senderWalletAddress, accBalance)){
-                if (msgData->verify(accBalance.publicKey)){
-                    msgData->setHash();
-                    /// @todo if transaction is not in consensus transaction pool add it here
-                    consensus->addTransactionToPool(msgData);
-                    waitingData.erase(msgData->IDHash);
-                    forwardInvMessage(msgData->IDHash, InvType::TX, msgi);
-                }
+            if (checkTransaction(msgData)){
+                /// @todo if transaction is not in consensus transaction pool add it here
+                consensus->addTransactionToPool(msgData);
+                waitingData.erase(msgData->IDHash);
+                forwardInvMessage(msgData->IDHash, InvType::TX, msgi);
             }
         }
         delete msgi.msg;

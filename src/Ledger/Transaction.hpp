@@ -94,6 +94,9 @@ public:
         return data;
     }
 
+    /// @brief Check if all fields in transaction are set
+    bool checkTransactionStructure() const;
+
     /// @brief Calculates has of the transaction (stored in IDHash attribute)
     void setHash();
 

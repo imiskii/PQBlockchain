@@ -73,6 +73,7 @@ namespace PQB{
         if (sock->Listen(MAX_SERVER_QUEUE) < 0){
             return false;
         }
+        PQB_LOG_INFO("SERVER", "Server successfully started");
         return true;
     }
 

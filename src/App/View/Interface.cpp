@@ -31,6 +31,10 @@ void Console::openConsol(){
             break;
         }
 
+        if (input.empty()){
+            continue;
+        }
+
         commandListener->emitCommand(input);
         input.clear();
     }

@@ -15,6 +15,18 @@
 
 namespace PQB{
 
+    bool Transaction::checkTransactionStructure() const{
+        if (versionNumber == 0 ||
+            sequenceNumber == 0 ||
+            senderWalletAddress.IsNull() ||
+            receiverWalletAddress.IsNull() ||
+            IDHash.IsNull() ||
+            signature.size() == 0 ||
+            signatureSize == 0){
+                return false;
+            }
+        return true;
+    }
 
     void Transaction::setHash(){
         byteBuffer buffer;

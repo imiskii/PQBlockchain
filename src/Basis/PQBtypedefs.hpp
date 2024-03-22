@@ -20,6 +20,12 @@ namespace PQB{
     typedef uint32_t cash;          ///< 4-byte datatype respresenting amount of currency
     typedef int64_t timestamp;     ///< 8-byte datatype representing a timestamp 
     typedef std::vector<PQB::byte> byteBuffer; ///< buffer with bytes
+
+    /// @brief Node types in PQB
+    enum class NodeType{
+        VALIDATOR,
+        SERVER
+    };
 }
 
 

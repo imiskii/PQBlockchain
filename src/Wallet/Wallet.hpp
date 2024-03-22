@@ -75,8 +75,6 @@ private:
 
     WalletConf *conf; ///< Configuration file reader and writer
 
-    WalletConf::RawWalletData_t getRowDataFrom();
-
 public:
 
     Wallet(std::string &confFilePath);
@@ -93,7 +91,7 @@ public:
     /// @brief Create a transaction with this wallet
     /// @param receiver Hexadecimal string representing address wallet of the receiver
     /// @param amount Amount of resources to transfer to the receiver
-    /// @return New created Transaction 
+    /// @return New created Transaction, nullptr if transaction can not be created because of missing balance (cash in wallet)
     TransactionPtr createNewTransaction(std::string &receiver, PQB::cash amount);
 
     /// @todo confirmTx, cancelTx, printTxRecords, keep track if transaction is confirmed or not

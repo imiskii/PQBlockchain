@@ -13,6 +13,8 @@
 #include "Interface.hpp"
 #include "Controller.hpp"
 #include "PQBModel.hpp"
+#include "Signer.hpp"
+#include "Log.hpp"
 
 
 int main(int argc, char *argv[]){
@@ -66,7 +68,14 @@ int main(int argc, char *argv[]){
 
     /// @todo consider using SHA-3 512, currently is used SHA-2 512 and it is also recommended by relevant institution but may be try to use SHA-3
 
-    PQB::PQBModel model;
+    ArgParser &a = ArgParser::GetInstance(argc, argv);
+    args_t parsedArgs = a.getArguments();
+
+    PQB::Log::init();
+    PQB::Signer::GetInstance(parsedArgs.signature_alg);
+
+    PQB::PQBModel model(parsedArgs.conf_file_path);
+    model.initializeManagers(parsedArgs.node);
     PQB::Console console;
     PQB::Controller controller(&console, &model);
     console.setCommandListener(&controller);

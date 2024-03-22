@@ -55,7 +55,8 @@ private:
     /// @brief Map with all existing commands and their creators
     const std::unordered_map<std::string, CommandCreator*> commandMap = {
         {"exit", new ExitCC()},
-        {"echo", new EchoCC()}
+        {"echo", new EchoCC()},
+        {"createTx", new CreateTxCC()}
     };
 };
 

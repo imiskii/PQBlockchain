@@ -13,6 +13,7 @@
 
 #include <vector>
 #include <string>
+#include "UtilsForPromptCheck.hpp"
 #include "Interface.hpp"
 #include "PQBModel.hpp"
 
@@ -45,6 +46,15 @@ protected:
     PQBModel *model;
 };
 
+
+/// @brief Create new transaction and broadcast it to peers and add it to blockchain
+class CreateTxC : public Command{
+public:
+    bool CheckArguments() const override;
+    void Behavior() const override;
+private:
+    static const short ARGS_NUM = 2;
+};
 
 /// @brief Exit Command
 class ExitC : public Command{
@@ -79,6 +89,17 @@ public:
     void Execute(Console* console, PQBModel *model, CommandArgs& commandArguments);
 };
 
+
+/// @brief CreateTx Command creator
+class CreateTxCC : public CommandCreator{
+public:
+    Command* FactoryMethod() const override{
+        return new CreateTxC();
+    }
+    const char* getCommandHelp() const override{
+        return "createTx: Create new transaction\n\tcreateTx <amount> <receiver wallet address>";
+    }
+};
 
 /// @brief Exit Command Creator
 class ExitCC : public CommandCreator{

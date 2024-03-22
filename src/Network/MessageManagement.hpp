@@ -165,11 +165,31 @@ private:
      */
     bool sendMessageToPeer(const socket_t connectionID, std::string &peerID, Message *message);
 
-    /// @brief Send a message to all connected peer
-    void broadcastMessageToAllPeers(Message *message);
+    /**
+     * @brief Send a message to all connected peer (can exclude on connection). The connectionID and peerID
+     * specify connection that will be excluded from BROADCAST. This is useful when some peer send some message that
+     * will be propagated further to other peers. In this case it is not useful to send such a message to original sender.
+     * 
+     * If connectionID is set to 0 and peerID to empty string (""), then this message is sended to all peers without any excludion.
+     * 
+     * @param connectionID connection ID which will be excluded from broadcast
+     * @param peerID peer ID which will be excluded from broadcast
+     * @param message message to broadcast
+     */
+    void broadcastMessageToAllPeers(const socket_t connectionID, std::string &peerID, Message *message);
 
-    /// @brief Send a message to peers on the UNL (Unique Node List)
-    void broadcastMessageToUNLPeers(Message *message);
+    /**
+     * @brief Send a message to peers on the UNL (Unique Node List). The connectionID and peerID
+     * specify connection that will be excluded from UNLCAST. This is useful when some peer send some message that
+     * will be propagated further to other peers. In this case it is not useful to send such a message to original sender.
+     * 
+     * If connectionID is set to 0 and peerID to empty string (""), then this message is sended to all peers without any excludion.
+     * 
+     * @param connectionID connection ID which will be excluded from unlcast
+     * @param peerID peer ID which will be excluded from unlcast
+     * @param message message to unlcast
+     */
+    void broadcastMessageToUNLPeers(const socket_t connectionID, std::string &peerID, Message *message);
 
     /// @brief Add Connection to connectionPool map and ID to setOfConnectedPeers
     /// @return True if success, False if ther is already existing connection with this peer
@@ -247,8 +267,13 @@ private:
 class MessageProcessor{
 public:
     
-    MessageProcessor(ConnectionManager *connectionManager, AccountStorage *accountStorage, BlocksStorage *blockStorage, Consensus *consensusAlgorithm, Wallet *localWallet);
+    MessageProcessor(AccountStorage *accountStorage, BlocksStorage *blockStorage, Consensus *consensusAlgorithm, Wallet *localWallet);
     ~MessageProcessor();
+
+    /// @brief Assign connectionManager to this message processor 
+    void assignConnectionManager(ConnectionManager *connectionManager){
+        connMng = connectionManager;
+    }
 
     /// @brief Process given message
     void processMessage(int connectionID, std::string &peerID, bool isUNL, Message *message);
@@ -258,6 +283,18 @@ public:
     void setConsensusMessages(bool onoff){
         consensusMessages = onoff;
     }
+
+    /**
+     * @brief Check transaction from MessageProcessor perspective. This is checking structure of the transaction,
+     * if sender and receiver exist, and if signature on transaction is valid. These are the conditions to process or forward a transaction.
+     * 
+     * This is not checking the balance or sequence number validity.
+     * 
+     * @param tx transaction to check
+     * @return true if transaction is valid
+     * @return false if transaction is invalid
+     */
+    bool checkTransaction(const TransactionPtr tx);
 
 private:
 

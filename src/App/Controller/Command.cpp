@@ -32,7 +32,6 @@ namespace PQB{
     }
 
     void ExitC::Behavior() const{
-        /// @todo: exit actions
         outputConsole->closeConsol();
     }
 
@@ -42,6 +41,24 @@ namespace PQB{
 
     void EchoC::Behavior() const{
         outputConsole->printToConsole(args.at(0).c_str());
+    }
+
+    bool CreateTxC::CheckArguments() const{
+        if (args.size() == ARGS_NUM){
+            // check if first argument is a number
+            // second argument have to be 128 long hexadecimal string representing wallet address
+            if (isNumber(args.at(0)) && (args.at(1).size() == 128) && isHexadecimal(args.at(1))){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void CreateTxC::Behavior() const{
+        uint32_t amount = std::stoul(args.at(0));
+        std::string receiver = args.at(1);
+        std::string ret = model->createTransaction(receiver, amount);
+        outputConsole->printToConsole(ret.c_str());
     }
 
 } // namespace PQB

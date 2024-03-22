@@ -26,8 +26,8 @@ BlocksStorage::BlocksStorage(){
 BlocksStorage::~BlocksStorage(){
     if(db != nullptr){
         delete db;
-        delete databaseOptions.block_cache;
     }
+    delete databaseOptions.block_cache;
         
 }
 
@@ -68,8 +68,7 @@ bool BlocksStorage::getRawBlock(const byte64_t &blockHash, byteBuffer &buffer){
     return false;
 }
 
-bool BlocksStorage::setBlock(const Block &block)
-{
+bool BlocksStorage::setBlock(const Block &block){
     byteBuffer buffer;
     size_t offset = 0;
     block.serialize(buffer, offset);

@@ -10,6 +10,7 @@
 
 #include "Wallet.hpp"
 
+
 namespace PQB{
 
     Wallet::Wallet(std::string &confFilePath){
@@ -78,6 +79,11 @@ namespace PQB{
     }
 
     TransactionPtr Wallet::createNewTransaction(std::string &receiver, PQB::cash amount){
+        signed long newBalance = balance - amount;
+        if (newBalance < 0){
+            return nullptr;
+        }
+
         const auto time = std::chrono::system_clock::now();
         TransactionPtr tx = std::make_shared<PQB::Transaction>();
         tx->versionNumber = TX_VERSION;
