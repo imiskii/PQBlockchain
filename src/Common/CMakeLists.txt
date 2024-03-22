@@ -1,7 +1,7 @@
 
 
-add_library(CommonLib Blob.cpp HexBase.cpp)
-target_link_libraries(CommonLib cryptopp)
+add_library(CommonLib Blob.cpp HexBase.cpp Log.cpp)
+target_link_libraries(CommonLib cryptopp spdlog)
 target_include_directories(CommonLib 
     PUBLIC ${CMAKE_CURRENT_LIST_DIR}
     PUBLIC ${CMAKE_SOURCE_DIR}/src/Basis

@@ -11,12 +11,16 @@
 #include "BlocksStorage.hpp"
 #include "AccountStorage.hpp"
 #include "Wallet.hpp"
+#include "Log.hpp"
 
 
 int main(int argc, char *argv[]){
 
+    PQB::Log::init();
+
     // ArgParser &a = ArgParser::GetInstance(argc, argv);
     // args_t parsedArgs = a.getArguments();
+
 
     PQB::Signer::GetInstance("falcon1024");
     PQB::Wallet *wallet;

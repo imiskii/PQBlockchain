@@ -24,6 +24,8 @@ namespace PQB{
 
     /// @brief Configuration file for PQB application, mainly information about wallet, made transactions, UNL, etc.
     inline const char* CONFIGURATION_FILE = "tmp/conf.json";
+    /// @brief Path to the file for PQB logs
+    inline const char* LOG_FILE = "tmp/log.txt";
 
     /// @brief Maximal size of a block in bytes (1MB)
     inline const size_t MAX_BLOCK_SIZE = 1048576;
