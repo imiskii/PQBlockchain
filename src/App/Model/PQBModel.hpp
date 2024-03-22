@@ -13,9 +13,8 @@
 #include "Wallet.hpp"
 #include "BlocksStorage.hpp"
 #include "AccountStorage.hpp"
-#include "Connection.hpp"
 #include "MessageManagement.hpp"
-
+#include "Consensus.hpp"
 
 namespace PQB{
 

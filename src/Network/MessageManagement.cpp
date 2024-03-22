@@ -10,7 +10,7 @@
 
 
 #include "MessageManagement.hpp"
-
+#include "Log.hpp"
 
 namespace PQB
 {
@@ -18,9 +18,7 @@ namespace PQB
     ConnectionManager::ConnectionManager(MessageProcessor *msgProcessor, AccountAddressStorage *addressStorage, std::string &walletID)
     : messsagProcessor(msgProcessor), addrStorage(addressStorage), localWalletID(walletID){
         server = new Server();
-        if (!runServer()){
-            /// @todo make log
-        }
+        runServer();
         connectionManagerRunFlag = true;
         connectionManagerThread = std::jthread(&ConnectionManager::manageConnections, this);
     }
@@ -285,7 +283,7 @@ namespace PQB
 
             if (changed < 0){ // poll failure
                 /// @todo handle poll failure
-                /// @todo make log
+                PQB_LOG_ERROR("NET", "poll() function failed");
             } else if (changed > 0 && !socketDescriptors.empty()){ // read sockets
                 int isServer = (socketDescriptors.at(0).fd == server->getSocketFD()) ? 1 : 0;
                 if ((socketDescriptors.at(0).revents & POLLIN) && (isServer)){

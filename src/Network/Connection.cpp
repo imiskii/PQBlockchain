@@ -11,6 +11,7 @@
 
 #include "Connection.hpp"
 #include "PQBconstatnts.hpp"
+#include "Log.hpp"
 
 namespace PQB{
 
@@ -39,6 +40,7 @@ namespace PQB{
             bytesToSend -= nBytes;
             bytesSent += nBytes;
         }
+        PQB_LOG_TRACE("NET", "{} message sent to {}", Message::messageTypeToString(message->getType()), connID);
         delete message;
     }
 
@@ -67,6 +69,7 @@ namespace PQB{
         }
         delete[] buffer;
         if (newMsg->checkMessage() && filterMessage(newMsg)){
+            PQB_LOG_TRACE("NET", "{} message received from {}", Message::messageTypeToString(newMsg->getType()), connID);
             return newMsg;
         }
         delete newMsg;
@@ -78,7 +81,6 @@ namespace PQB{
         byteBuffer buffer;
         size_t offset = 0;
         buffer.resize(Message::getHeaderSize());
-        /// @todo adjust the parsing
         ssize_t nBytes = sock->Recv(buffer.data(), buffer.size(), MSG_PEEK);
         if (nBytes == 0){
             *closeFlag = true;

@@ -11,6 +11,7 @@
 #include "BlocksStorage.hpp"
 #include "PQBExceptions.hpp"
 #include "PQBconstatnts.hpp"
+#include "Log.hpp"
 
 namespace PQB{
 
@@ -43,7 +44,7 @@ Block *BlocksStorage::getBlock(const byte64_t &blockHash){
     if (status.IsNotFound()){
         return nullptr;
     } else if (!status.ok()){
-        /// @todo make log -> status.ToString()
+        PQB_LOG_ERROR("BLOCK STORAGE", "Failed to get block: {}", status.ToString());
         return nullptr;
     }
     byteBuffer buffer(readValue.begin(), readValue.end());
@@ -59,7 +60,7 @@ bool BlocksStorage::getRawBlock(const byte64_t &blockHash, byteBuffer &buffer){
     if (status.IsNotFound()){
         return false;
     } else if (!status.ok()){
-        /// @todo make log -> status.ToString()
+        PQB_LOG_ERROR("BLOCK STORAGE", "Failed to get block: {}", status.ToString());
         return false;
     }
     buffer.resize(readValue.size());
@@ -81,8 +82,11 @@ bool BlocksStorage::setBlock(const Block &block)
 bool BlocksStorage::setBlock(const byte64_t &blockHash, const byteBuffer &buffer){
     leveldb::Slice value((char*) buffer.data(), buffer.size());
     leveldb::Status status = db->Put(leveldb::WriteOptions(), leveldb::Slice((char*)blockHash.data(), blockHash.size()), value);
-    if (!status.ok())
+    if (!status.ok()){
+        PQB_LOG_ERROR("BLOCK STORAGE", "Failed to get block: {}", status.ToString());
         return false;
+    }
+    PQB_LOG_TRACE("BLOCK STORAGE", "Block added to database: {}", blockHash.getHex());
     return true;
 
 }

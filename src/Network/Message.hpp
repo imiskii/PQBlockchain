@@ -181,6 +181,31 @@ public:
      */
     virtual void deserialize(void *messageStruct) const = 0;
 
+
+    static std::string messageTypeToString(MessageType type){
+        switch (type)
+        {
+        case MessageType::VERSION:
+            return "VERSION";
+        case MessageType::ACK:
+            return "ACK";
+        case MessageType::TX:
+            return "TRANSACTION";
+        case MessageType::BLOCK:
+            return "BLOCK";
+        case MessageType::ACCOUNT:
+            return "ACCOUNT";
+        case MessageType::INV:
+            return "INVENTORY";
+        case MessageType::GETDATA:
+            return "GETDATA";
+        case MessageType::PROPOSAL:
+            return "PROPOSAL";
+        default:
+            return "UNKNOWN";
+        }
+    }
+
 protected:
     message_hdr_t msgHdr;   ///< message header
     byteBuffer data;        ///< byte buffer representing message data (at the begining of these buffer is also the header)

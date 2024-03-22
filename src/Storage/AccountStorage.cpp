@@ -12,7 +12,7 @@
 #include "AccountStorage.hpp"
 #include "PQBExceptions.hpp"
 #include "PQBconstatnts.hpp"
-
+#include "Log.hpp"
 
 namespace PQB{
 
@@ -40,7 +40,7 @@ bool AccountBalanceStorage::getBalance(const byte64_t &walletID, AccountBalance 
     if (status.IsNotFound()){
         return false;
     } else if (!status.ok()){
-        /// @todo make log -> status.ToString()
+        PQB_LOG_ERROR("ACCOUNT STORAGE", "Failed to get account balance: {}", status.ToString());
         return false;
     }
     byteBuffer buffer(readValue.begin(), readValue.end());
@@ -56,8 +56,11 @@ bool AccountBalanceStorage::setBalance(const byte64_t &walletID, AccountBalance 
     acc.serializeAccountBalance(buffer, offset);
     leveldb::Slice value((char*) buffer.data(), buffer.size());
     leveldb::Status status = db->Put(leveldb::WriteOptions(), leveldb::Slice((char*)walletID.data(), walletID.size()), value);
-    if (!status.ok())
+    if (!status.ok()){
+        PQB_LOG_ERROR("ACCOUNT STORAGE", "Failed to set account balance: {}", status.ToString());
         return false;
+    }
+    PQB_LOG_TRACE("ACCOUNT STORAGE", "Balance {} with seq. {} set for account: {}", acc.balance, acc.txSequence, walletID.getHex());
     return true;
 }
 
@@ -88,6 +91,7 @@ void AccountBalanceStorage::setBalancesByTxSet(std::set<TransactionPtr, Transact
     status = db->Write(leveldb::WriteOptions(), &batch);
     if (!status.ok())
         throw PQB::Exceptions::Storage(status.ToString());
+    PQB_LOG_TRACE("ACCOUNT STORAGE", "Account balances updated by transaction set");
 }
 
 byte64_t AccountBalanceStorage::getAccountsMerkleRootHash(){
@@ -152,8 +156,7 @@ bool AccountAddressStorage::getAddresses(const byte64_t &walletID, AccountAddres
     if (status.IsNotFound()){
         return false;
     } else if (!status.ok()){
-        /// @todo make log
-        // throw PQB::Exceptions::Storage(status.ToString());
+        PQB_LOG_ERROR("ACCOUNT STORAGE", "Failed to get account addresses: {}", status.ToString());
         return false;
     }
     byteBuffer buffer(readValue.begin(), readValue.end());
@@ -169,8 +172,11 @@ bool AccountAddressStorage::setAddresses(const byte64_t &walletID, AccountAddres
     acc.serializeAccountAddress(buffer, offset);
     leveldb::Slice value((char*) buffer.data(), buffer.size());
     leveldb::Status status = db->Put(leveldb::WriteOptions(), leveldb::Slice((char*)walletID.data(), walletID.size()), value);
-    if (!status.ok())
+    if (!status.ok()){
+        PQB_LOG_ERROR("ACCOUNT STORAGE", "Failed to set account addresses: {}", status.ToString());
         return false;
+    }
+    PQB_LOG_TRACE("ACCOUNT STORAGE", "Addresses updated for account: {}", walletID.getHex());
     return true;
 }
 

@@ -15,6 +15,7 @@
 #include <cryptopp/hex.h>       // HexEncoder
 #include <cryptopp/filters.h>   // ArraySink
 #include "PQBExceptions.hpp"
+#include "Log.hpp"
 
 namespace PQB{
 
@@ -26,6 +27,7 @@ SignAlgorithmPtr Signer::GetInstance(std::string chosenAlgorithm){
         } else if (chosenAlgorithm == "ed25519"){
             __algorithmInstance = std::make_shared<Ed25519>();
         }
+        PQB_LOG_INFO("SIGNER", "{} was chosen for digital signatures", chosenAlgorithm);
     }
     return __algorithmInstance;
 }

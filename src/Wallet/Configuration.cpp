@@ -11,6 +11,7 @@
 
 #include "Configuration.hpp"
 #include "PQBExceptions.hpp"
+#include "Log.hpp"
 
 
 namespace PQB{
@@ -47,6 +48,7 @@ namespace PQB{
             std::string err = "Provided path for configuration file: " + filePath + " is not valid!";
             throw PQB::Exceptions::Wallet(err);
         }
+        PQB_LOG_INFO("WALLET", "New wallet created");
     }
 
     bool WalletConf::loadConf(RawWalletData_t &rwd){
@@ -75,6 +77,7 @@ namespace PQB{
             tx.confirmed = rawTx["confirmed"];
             rwd.txRecords.push_back(tx);
         }
+        PQB_LOG_INFO("WALLET", "Wallet configuration loaded");
         return true;
     }
 
@@ -106,6 +109,7 @@ namespace PQB{
         confFile << std::setw(4) << json << std::endl;
         confFile.close();
 
+        PQB_LOG_INFO("WALLET", "Wallet configuration saved");
         return true;
     }
 

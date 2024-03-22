@@ -9,7 +9,7 @@
  */
 
 #include "Server.hpp"
-
+#include "Log.hpp"
 
 namespace PQB{
 
@@ -17,7 +17,7 @@ namespace PQB{
         if (init()){
             return sock;
         }
-        /// @todo make log
+        PQB_LOG_ERROR("SERVER", "Server initialization failed! Server is not running.");
         if (sock != nullptr){
             delete sock;
             sock = nullptr;
