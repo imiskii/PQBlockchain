@@ -15,8 +15,8 @@
 namespace PQB
 {
 
-    ConnectionManager::ConnectionManager(MessageProcessor *msgProcessor, AccountAddressStorage *addressStorage, std::string &walletID)
-    : messsagProcessor(msgProcessor), addrStorage(addressStorage), localWalletID(walletID){
+    ConnectionManager::ConnectionManager(MessageProcessor *msgProcessor, AccountAddressStorage *addressStorage, std::string &walletID, NodeType type)
+    : messsagProcessor(msgProcessor), addrStorage(addressStorage), localWalletID(walletID), localNodeType(type){
         server = new Server();
         runServer();
         connectionManagerRunFlag = true;
@@ -27,6 +27,17 @@ namespace PQB
         connectionManagerRunFlag = false;
         if (connectionManagerThread.joinable())
             connectionManagerThread.join();
+        // Delete all connections
+        for (auto &connection : connectionPool){
+            delete connection.second;
+        }
+        // Delete all messages in message requests
+        while (!messageRequestQueue.empty()){
+            MessageRequest_t req = messageRequestQueue.front();
+            delete req.message;
+            messageRequestQueue.pop();
+        }
+        
         delete server;
     }
 
@@ -36,6 +47,7 @@ namespace PQB
     }
 
     void ConnectionManager::addConnectionRequest(ConnectionRequest_t req){
+        PQB_LOG_TRACE("CONNECTION MANAGER", "Connection request {} added", req.peerID);
         std::lock_guard<std::mutex> lock(connectionRequestQueueMutex);
         connectionRequestQueue.push(req);
     }
@@ -73,29 +85,44 @@ namespace PQB
                 deleteConnection(exConn->getConnectionSocketFD());
             }
         }
+        PQB_LOG_TRACE("CONNECTION MANAGER", "Connection {} renamed to {}", thisConn->connID, peerID);
         updatePeerIdOfConnectionInConnectionPool(connectionID, thisConn->connID, peerID);
         thisConn->isConfirmed = true;
-        /// @todo send ACK
-        
+        /// Send ACK
+        AckMessage *msg = new AckMessage(AckMessage::getPayloadSize());
+        msg->serialize(nullptr);
+        MessageRequest_t req = {.type=MessageRequestType::ONE, .connectionID=thisConn->getConnectionSocketFD(), .peerID=peerID, .message=msg};
+        addMessageRequest(req);
     }
 
     bool ConnectionManager::createNewConnection(std::string &peerID, std::vector<std::string> &addresses, bool isOnUNL){
         // Check if this connection does not already exists
-        if (isConnectionInConnectionPool(peerID))
+        if (isConnectionInConnectionPool(peerID)){
+            PQB_LOG_TRACE("CONNECTION MANAGER", "Connection {} alread exists", peerID);
             return false;
+        }
 
         // Create new Connection
         Sock *sock = connectToPeer(addresses);
         if (sock == nullptr){
+            PQB_LOG_ERROR("CONNECTION MANAGER", "Establishing connection with peer: {} failed", peerID);
             return false;
         }
+        PQB_LOG_INFO("CONNECTION MANAGER", "Connection with peer: {} established", peerID);
         Connection *connection = new Connection(peerID, sock, isOnUNL);
         if (!addConnectionToConnectionPool(sock->getSocketFD(), connection, peerID)){
             delete connection;
             return false;
         }
         connection->isConfirmed = true;
-        /// @todo send VERSION message
+        // Send VERSION message
+        VersionMessage *msg = new VersionMessage(VersionMessage::getPayloadSize());
+        byte64_t localID;
+        localID.setHex(localWalletID);
+        VersionMessage::version_msg_t mData = {.version=MSG_VERSION, .nodeType=localNodeType, .peerID=localID};
+        msg->serialize(&mData);
+        MessageRequest_t req = {.type=MessageRequestType::ONE, .connectionID=sock->getSocketFD(), .peerID=peerID, .message=msg};
+        addMessageRequest(req);
         return true;
     }
 
@@ -110,6 +137,7 @@ namespace PQB
 
     void ConnectionManager::deleteConnection(const socket_t connectionID){
         auto connection = getConnectionFromConnectionPool(connectionID);
+        PQB_LOG_INFO("CONNECTION MANAGER", "Connection with {} was closed", connection->connID);
         if (connection != nullptr){
             deleteConnectionFromConnectionPool(connectionID, connection->connID);
             delete connection;
@@ -121,9 +149,11 @@ namespace PQB
         if (connection != nullptr){
             if (connection->connID == peerID && connection->isConfirmed){
                 connection->sendMessage(message);
+                delete message;
                 return true;
             }
         }
+        delete message;
         return false;
     }
 
@@ -135,6 +165,7 @@ namespace PQB
                 }
             }
         }
+        delete message;
     }
 
     void ConnectionManager::broadcastMessageToUNLPeers(const socket_t connectionID, std::string &peerID, Message *message){
@@ -145,6 +176,7 @@ namespace PQB
                 }
             }
         }
+        delete message;
     }
 
     bool ConnectionManager::addConnectionToConnectionPool(const socket_t connectionID, Connection* connection, const std::string &peerID){
@@ -270,6 +302,7 @@ namespace PQB
             }
             Sock *sock = new Sock(socket_fd);
             // Connect
+            PQB_LOG_TRACE("CONNECTION MANAGER", "Trying to create connection with {}", address);
             if (sock->Connect(result->ai_addr, result->ai_addrlen) < 0){
                 freeaddrinfo(result);
                 result = nullptr;
@@ -286,23 +319,35 @@ namespace PQB
         int changed;
         while (connectionManagerRunFlag)
         {
-            changed = poll(socketDescriptors.data(), socketDescriptors.size(), 0);
+            changed = poll(socketDescriptors.data(), socketDescriptors.size(), 1000);
 
             if (changed < 0){ // poll failure
                 /// @todo handle poll failure
-                PQB_LOG_ERROR("NET", "poll() function failed");
+                PQB_LOG_ERROR("CONNECTION MANAGER", "poll() function failed");
             } else if (changed > 0 && !socketDescriptors.empty()){ // read sockets
                 int isServer = (socketDescriptors.at(0).fd == server->getSocketFD()) ? 1 : 0;
                 if ((socketDescriptors.at(0).revents & POLLIN) && (isServer)){
                     handleServerPoll();
                     socketDescriptors.at(0).revents = 0;
                 }
+                bool closeFlag = false;
+                std::vector<int> socketsToClose;
                 for (auto it = socketDescriptors.begin() + isServer; it != socketDescriptors.end(); ++it){
                     if ((it->revents & (POLLIN | POLLPRI)) != 0){
-                        handleConnectionPoll(it->fd);
+                        handleConnectionPoll(it->fd, &closeFlag);
+                        if (closeFlag){
+                            socketsToClose.push_back(it->fd);
+                            closeFlag = false;
+                            continue;
+                        }
                         it->revents = 0;
                     }
                 }
+                // Remove closed connections
+                for (const auto sock_fd : socketsToClose){
+                    deleteConnection(sock_fd);
+                }
+                socketsToClose.clear();
             }
             processMessageQueueRequests();
             processConnectionQueueRequests();
@@ -317,16 +362,16 @@ namespace PQB
         
     }
 
-    void ConnectionManager::handleConnectionPoll(int socket_fd){
+    void ConnectionManager::handleConnectionPoll(int socket_fd, bool *closeFlag){
         Connection *conn = getConnectionFromConnectionPool(socket_fd);
         if (conn != nullptr){
-            bool closeFlag;
-            Message *msg = conn->receiveMessage(&closeFlag);
-            if (closeFlag){
-                deleteConnection(socket_fd);
+            Message *msg = conn->receiveMessage(closeFlag);
+            if (*closeFlag){
+                return;
             } else {
-                if (msg != nullptr)
+                if (msg != nullptr){
                     messsagProcessor->processMessage(socket_fd, conn->connID, conn->isUNL, msg);
+                }
             }
         }
     }
@@ -362,8 +407,10 @@ namespace PQB
             byte64_t peerHash;
             peerHash.setHex(req.peerID);
             AccountAddress accAddrs;
-            if (!addrStorage->getAddresses(peerHash, accAddrs))
+            if (!addrStorage->getAddresses(peerHash, accAddrs)){
+                PQB_LOG_ERROR("CONNECTION MANAGER", "{} account is not in the database", req.peerID);
                 return;
+            }
             
             createNewConnection(req.peerID, accAddrs.addresses, req.setAsUNL);
         }
@@ -385,14 +432,22 @@ namespace PQB
         processCondition.notify_one();
         if (processingThread.joinable())
             processingThread.join();
+        // Delete all messages from message processing queue
+        while (!processingQueue.empty()){
+            message_item_t item = processingQueue.top();
+            delete item.msg;
+            processingQueue.pop();
+        }
     }
 
-    void MessageProcessor::processMessage(int connectionID, std::string &peerID, bool isUNL, Message *message)
-    {
+    void MessageProcessor::processMessage(int connectionID, std::string &peerID, bool isUNL, Message *message){
+        MessageType msgType = message->getType(); // save message type for log
         if (connMng != nullptr){
             message_item_t msgi = {.connection_id=connectionID, .peer_id=peerID, .isUNL=isUNL, .msg=message};
             if (!earlyProcessing(msgi)){
                 addMessageToProcessingQueue(msgi);
+            } else {
+                PQB_LOG_TRACE("MESSAGE PROCESSOR", "{} message processed", Message::messageTypeToString(msgType));
             }
         }
     }
@@ -442,7 +497,9 @@ namespace PQB
             processingQueue.pop();
             lock.unlock();
 
+            MessageType msgType = msg.msg->getType(); // save message type for log
             lateProcessing(msg);
+            PQB_LOG_TRACE("MESSAGE PROCESSOR", "{} message processed", Message::messageTypeToString(msgType));
         }
     }
 
@@ -664,7 +721,7 @@ namespace PQB
         // Create Inventory message for this transaction
         inv_message_t inv = {.requestType=type, .itemID=item_id};
         std::vector<inv_message_t> invVec = {inv};
-        InvMessage *invMsg = new InvMessage(invVec.size());
+        InvMessage *invMsg = new InvMessage(InvMessage::getPayloadSize(invVec.size()));
         invMsg->serialize(&invVec);
         // Add request to broadcast this transaction
         ConnectionManager::MessageRequest_t req = {.type=ConnectionManager::MessageRequestType::BROADCAST, .connectionID=msgi.connection_id, .peerID=msgi.peer_id, .message=invMsg};
@@ -673,7 +730,7 @@ namespace PQB
 
     void MessageProcessor::forwardInvMessage(const inv_message_t &inv, const message_item_t &msgi){
         std::vector<inv_message_t> invVec = {inv};
-        InvMessage *invMsg = new InvMessage(invVec.size());
+        InvMessage *invMsg = new InvMessage(InvMessage::getPayloadSize(invVec.size()));
         invMsg->serialize(&invVec);
         // Add request to broadcast this transaction
         ConnectionManager::MessageRequest_t req = {.type=ConnectionManager::MessageRequestType::BROADCAST, .connectionID=msgi.connection_id, .peerID=msgi.peer_id, .message=invMsg};

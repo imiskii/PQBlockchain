@@ -22,7 +22,7 @@ namespace PQB{
     typedef std::vector<PQB::byte> byteBuffer; ///< buffer with bytes
 
     /// @brief Node types in PQB
-    enum class NodeType{
+    enum class NodeType : uint32_t{
         VALIDATOR,
         SERVER
     };

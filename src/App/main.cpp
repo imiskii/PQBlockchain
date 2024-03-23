@@ -76,6 +76,7 @@ int main(int argc, char *argv[]){
 
     PQB::PQBModel model(parsedArgs.conf_file_path);
     model.initializeManagers(parsedArgs.node);
+    model.initializeUNLConnections();
     PQB::Console console;
     PQB::Controller controller(&console, &model);
     console.setCommandListener(&controller);

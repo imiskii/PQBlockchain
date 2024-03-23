@@ -65,9 +65,9 @@ namespace PQB{
     }
 
     bool Message::checkMessage() const{
-        if (data.size() == currentMessageSize && msgHdr.magicNum == MESSAGE_MAGIC_CONST){
+        if ((data.size() == currentMessageSize) && (msgHdr.magicNum == MESSAGE_MAGIC_CONST)){
             byte64_t messageHash;
-            HashMan::SHA512_hash(&messageHash, data.data(), data.size());
+            HashMan::SHA512_hash(&messageHash, data.data() + getHeaderSize(), getPayloadSize());
             // compare 32 bits of hash with check sum
             return (!std::memcmp(messageHash.data(), &msgHdr.checkSum, sizeof(msgHdr.checkSum)));
         }
@@ -76,9 +76,9 @@ namespace PQB{
 
     void Message::setCheckSum(){
         byte64_t messageHash;
-        HashMan::SHA512_hash(&messageHash, data.data(), data.size());
+        HashMan::SHA512_hash(&messageHash, data.data() + getHeaderSize(), getPayloadSize());
         std::memcpy(&msgHdr.checkSum, messageHash.data(), sizeof(msgHdr.checkSum));
-        std::memcpy(data.data() + (getHeaderSize() - sizeof(msgHdr.checkSum)), &msgHdr.checkSum, sizeof(msgHdr.checkSum));
+        std::memcpy(data.data() + (getHeaderSize() - sizeof(msgHdr.checkSum)) , &msgHdr.checkSum, sizeof(msgHdr.checkSum));
     }
 
     /***** VERSION Message *****/

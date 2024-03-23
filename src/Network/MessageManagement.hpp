@@ -72,7 +72,7 @@ public:
         bool setAsUNL;      ///< flag telling if connection should be treated as connection on the UNL
     };
 
-    ConnectionManager(MessageProcessor *msgProcessor, AccountAddressStorage *addressStorage, std::string &walletID);
+    ConnectionManager(MessageProcessor *msgProcessor, AccountAddressStorage *addressStorage, std::string &walletID, NodeType type);
 
     ~ConnectionManager();
 
@@ -86,7 +86,7 @@ public:
     /**
      * @brief Add request for creating connection with a peer
      * 
-     * @param peerID peer ID with which connection should be established
+     * @param req Connection request
      */
     void addConnectionRequest(ConnectionRequest_t req);
 
@@ -112,6 +112,7 @@ private:
     MessageProcessor *messsagProcessor;
     AccountAddressStorage *addrStorage;
     std::string localWalletID; ///< wallet address/peerID of local (this) node
+    NodeType localNodeType; ///< Type of node running this ConnectionManager
     Server *server; ///< Instance of a PQB server
 
     std::queue<ConnectionRequest_t> connectionRequestQueue; ///< queue with requests for connection
@@ -253,7 +254,8 @@ private:
 
     /// @brief Handle message receiving of single connection after poll() set POLLIN flag
     /// @param socket_fd Socket descriptor of the connection
-    void handleConnectionPoll(int socket_fd);
+    /// @param closeFlag indicates if connection have closed
+    void handleConnectionPoll(int socket_fd, bool *closeFlag);
 
     /// @brief Process all requests in the message queue
     void processMessageQueueRequests();

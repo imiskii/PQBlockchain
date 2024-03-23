@@ -41,7 +41,6 @@ namespace PQB{
             bytesSent += nBytes;
         }
         PQB_LOG_TRACE("NET", "{} message sent to {}", Message::messageTypeToString(message->getType()), connID);
-        delete message;
     }
 
     Message *Connection::receiveMessage(bool *closeFlag){
@@ -68,9 +67,11 @@ namespace PQB{
             std::memset(buffer, 0, bufferSize);
         }
         delete[] buffer;
-        if (newMsg->checkMessage() && filterMessage(newMsg)){
+        if (newMsg->checkMessage()){
             PQB_LOG_TRACE("NET", "{} message received from {}", Message::messageTypeToString(newMsg->getType()), connID);
-            return newMsg;
+            if (filterMessage(newMsg)){
+                return newMsg;
+            }
         }
         delete newMsg;
         return nullptr;

@@ -41,6 +41,9 @@ public:
     /// @return true if operation is successful false if operation fails
     bool initializeManagers(NodeType node_type);
 
+    /// @brief Initialize connections on Unique Node List
+    void initializeUNLConnections();
+
     /**
      * @brief Create new Transaction broadcast it to peers
      * 

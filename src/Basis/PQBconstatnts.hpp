@@ -37,6 +37,8 @@ namespace PQB{
     /// @brief Maximal number of incoming connection requests in queue for accepting 
     inline const size_t MAX_SERVER_QUEUE = 6;
 
+    /// @brief Message Version
+    inline const uint32_t MSG_VERSION = 1;
     /// @brief Current transaction version
     inline const uint32_t TX_VERSION = 1;
 }

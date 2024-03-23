@@ -43,9 +43,17 @@ namespace PQB{
         consensus = new Consensus();
         msgPrc = new MessageProcessor(accS, blockS, consensus, wallet);
         std::string walletID = wallet->getWalletID().getHex();
-        connMng = new ConnectionManager(msgPrc, accS->addrDB, walletID);
+        connMng = new ConnectionManager(msgPrc, accS->addrDB, walletID, node_type);
         msgPrc->assignConnectionManager(connMng);
         return true;
+    }
+
+    void PQBModel::initializeUNLConnections(){
+        std::vector<std::string> unl = wallet->getUNL();
+        for (const auto &peer : unl){
+            PQB::ConnectionManager::ConnectionRequest_t req = {.peerID=peer, .setAsUNL=true};
+            connMng->addConnectionRequest(req);
+        }
     }
 
     bool PQBModel::openConfigurationAndDatabase(){
@@ -70,6 +78,7 @@ namespace PQB{
             return "Transaction can not be sent because of invalid transaction structure, sender or receiver address or invalid signature!";
         }
         TransactionMessage *msg = new TransactionMessage(tx->getSize());
+        msg->serialize(tx.get());
         ConnectionManager::MessageRequest_t req = {.type=ConnectionManager::MessageRequestType::BROADCAST, .connectionID=0, .peerID="", .message=msg};
         connMng->addMessageRequest(req);
         consensus->addTransactionToPool(tx);

@@ -202,7 +202,7 @@ public:
         case MessageType::PROPOSAL:
             return "PROPOSAL";
         default:
-            return "UNKNOWN";
+            return "UNKNOW";
         }
     }
 
@@ -219,7 +219,7 @@ public:
 
     struct version_msg_t{
         uint32_t version;
-        uint32_t nodeType;
+        NodeType nodeType;
         byte64_t peerID;
     };
 
