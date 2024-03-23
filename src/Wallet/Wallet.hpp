@@ -60,12 +60,14 @@ public:
         txSequenceNumber = 1;
     }
 
-
+    PQB::cash getBalance() { return balance; }
+    u_int32_t getTxSeqNum() { return txSequenceNumber; }
     byteBuffer& getPublicKey() { return publicKey; }
     byteBuffer& getSecretKey() { return secretKey; }
     byte64_t& getWalletID() { return walletID; }
     std::vector<std::string>& getAddressList() { return nodeAddresses; }
     std::vector<std::string>& getUNL() { return nodeUNL; }
+    void setBalance(PQB::cash newBalance) { balance = newBalance; }
 
 };
 

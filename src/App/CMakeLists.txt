@@ -7,10 +7,16 @@ add_subdirectory(Model)
 
 # Create an executable
 add_executable(main main.cpp)
-
-# Link other libraries
 target_link_libraries(main PRIVATE ArgparserLib InterfaceLib ControllerLib ModelLib SignerLib CommonLib)
 
+
+## Configuration generator
+add_executable(conf-generator conf-generator.cpp)
+target_link_libraries(conf-generator PRIVATE CommonLib SignerLib WalletLib)
+
+## Account Database populator
+add_executable(acc-generator acc-generator.cpp)
+target_link_libraries(acc-generator PRIVATE CommonLib AccountLib StorageLib SignerLib WalletLib)
 
 ## KEM.cpp
 add_executable(kem kem.cpp)

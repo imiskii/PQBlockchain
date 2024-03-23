@@ -47,6 +47,9 @@ namespace PQB{
             txRecords.emplace(tx.txID, p);
         }
 
+        if (walletID.IsNull())
+            genNewKeys();
+
         return true;
     }
 
@@ -109,8 +112,7 @@ namespace PQB{
     }
 
     void Wallet::genNewKeys(){
-        auto signer = Signer::GetInstance();
-        signer->genKeys(secretKey, publicKey);
+        Signer::GetInstance()->genKeys(secretKey, publicKey);
         if (walletID.IsNull())
             HashMan::SHA512_hash(&walletID, publicKey.data(), publicKey.size());
     }

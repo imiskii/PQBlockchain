@@ -72,8 +72,8 @@ void Ed25519::genKeys(PQB::byteBuffer& privateKey, PQB::byteBuffer& publicKey){
     CryptoPP::ed25519::Signer signer;
     CryptoPP::ArraySink sinkSK(privateKey.data(), privateKeySize);
     CryptoPP::ArraySink sinkPK(publicKey.data(), publicKeySize);
-    CryptoPP::ed25519::Verifier verifier(signer);
     signer.AccessPrivateKey().GenerateRandom(prng);
+    CryptoPP::ed25519::Verifier verifier(signer);
 
     signer.GetPrivateKey().Save(sinkSK);
     verifier.GetPublicKey().Save(sinkPK);

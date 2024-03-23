@@ -20,8 +20,7 @@ namespace PQB{
         std::ifstream confFile(filePath);
         if (!confFile.good()){
             initEmpty();
-            std::string err = "Provided configuration file: " + filePath + " does not exsits! On given path was created new configuration file.";
-            throw PQB::Exceptions::Wallet(err);
+            PQB_LOG_WARN("WALLET", "Provided configuration file: {} does not exsits! On given path was created new configuration file", filePath);
         }
     }
 
@@ -65,6 +64,7 @@ namespace PQB{
         rwd.balance = json["balance"];
         rwd.txSequenceNumber = json["sequence"];
         rwd.nodeAddresses = json["addrs"];
+        rwd.nodeUNL = json["UNL"];
         for (const auto &rawTx : json["txRecords"]){
             RawTransactionData_t tx;
             tx.txID = rawTx["id"];
@@ -77,6 +77,7 @@ namespace PQB{
             tx.confirmed = rawTx["confirmed"];
             rwd.txRecords.push_back(tx);
         }
+        confFile.close();
         PQB_LOG_INFO("WALLET", "Wallet configuration loaded");
         return true;
     }
@@ -93,6 +94,7 @@ namespace PQB{
         json["balance"] = rwd.balance;
         json["sequence"] = rwd.txSequenceNumber;
         json["addrs"] = rwd.nodeAddresses;
+        json["UNL"] = rwd.nodeUNL;
         for (const auto &rawTx : rwd.txRecords){
             nlohmann::json jTx;
             jTx["id"] = rawTx.txID;
