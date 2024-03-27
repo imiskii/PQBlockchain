@@ -11,7 +11,7 @@
 
 #include "AccountStorage.hpp"
 #include "PQBExceptions.hpp"
-#include "PQBconstatnts.hpp"
+#include "PQBconstants.hpp"
 #include "Log.hpp"
 
 namespace PQB{
@@ -28,7 +28,7 @@ AccountBalanceStorage::~AccountBalanceStorage(){
 }
 
 void AccountBalanceStorage::Open(){
-    leveldb::Status status = leveldb::DB::Open(databaseOptions, PQB::ACCOUNTS_DATABASE_PATH, &db);
+    leveldb::Status status = leveldb::DB::Open(databaseOptions, PQB::ACCOUNTS_DATABASE_PATH.data(), &db);
     if(!status.ok()){
         throw PQB::Exceptions::Storage(status.ToString());
     }
@@ -144,7 +144,7 @@ AccountAddressStorage::~AccountAddressStorage(){
 }
 
 void AccountAddressStorage::Open(){
-    leveldb::Status status = leveldb::DB::Open(databaseOptions, PQB::ADDRESS_DATABASE_PATH, &db);
+    leveldb::Status status = leveldb::DB::Open(databaseOptions, PQB::ADDRESS_DATABASE_PATH.data(), &db);
     if(!status.ok()){
         throw PQB::Exceptions::Storage(status.ToString());
     }

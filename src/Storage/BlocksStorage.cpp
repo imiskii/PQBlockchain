@@ -10,7 +10,7 @@
 
 #include "BlocksStorage.hpp"
 #include "PQBExceptions.hpp"
-#include "PQBconstatnts.hpp"
+#include "PQBconstants.hpp"
 #include "Log.hpp"
 
 namespace PQB{
@@ -32,7 +32,7 @@ BlocksStorage::~BlocksStorage(){
 }
 
 void BlocksStorage::openDatabase(){
-    leveldb::Status status = leveldb::DB::Open(databaseOptions, PQB::BLOCKS_DATABASE_PATH, &db);
+    leveldb::Status status = leveldb::DB::Open(databaseOptions, PQB::BLOCKS_DATABASE_PATH.data(), &db);
     if(!status.ok()){
         throw PQB::Exceptions::Storage(status.ToString());
     }

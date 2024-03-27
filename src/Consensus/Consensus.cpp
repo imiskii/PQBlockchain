@@ -1,7 +1,7 @@
 /**
  * @file Consensus.cpp
  * @author Michal Ľaš
- * @brief 
+ * @brief Implementation of the Ripple XRP consensus mechanism
  * @date 2024-03-17
  * 
  * @copyright Copyright (c) 2024

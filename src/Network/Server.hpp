@@ -19,7 +19,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include "Sock.hpp"
-#include "PQBconstatnts.hpp"
+#include "PQBconstants.hpp"
 
 
 namespace PQB{

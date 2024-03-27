@@ -10,7 +10,7 @@
 
 
 #include "argparser.hpp"
-#include "PQBconstatnts.hpp"
+#include "PQBconstants.hpp"
 
 using namespace std;
 

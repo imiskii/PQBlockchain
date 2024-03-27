@@ -19,7 +19,7 @@
 #include <utility>
 #include <sstream>
 #include <memory>
-#include "PQBconstatnts.hpp"
+#include "PQBconstants.hpp"
 #include "PQBtypedefs.hpp"
 #include "Transaction.hpp"
 #include "HashManager.hpp"

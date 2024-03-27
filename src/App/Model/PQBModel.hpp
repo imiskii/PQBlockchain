@@ -11,7 +11,7 @@
 #pragma once
 
 #include <string>
-#include "PQBconstatnts.hpp"
+#include "PQBconstants.hpp"
 #include "Wallet.hpp"
 #include "BlocksStorage.hpp"
 #include "AccountStorage.hpp"

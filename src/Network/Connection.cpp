@@ -10,7 +10,7 @@
 
 
 #include "Connection.hpp"
-#include "PQBconstatnts.hpp"
+#include "PQBconstants.hpp"
 #include "Log.hpp"
 
 namespace PQB{

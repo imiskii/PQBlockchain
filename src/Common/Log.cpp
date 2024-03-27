@@ -10,14 +10,14 @@
 
 
 #include "Log.hpp"
-#include "PQBconstatnts.hpp"
+#include "PQBconstants.hpp"
 
 namespace PQB{
 
     std::shared_ptr<spdlog::logger> Log::s_Logger;
 
     void Log::init(){
-        s_Logger = spdlog::basic_logger_mt("PQB", LOG_FILE);
+        s_Logger = spdlog::basic_logger_mt("PQB", LOG_FILE.data());
         s_Logger->flush_on(spdlog::level::trace);
         s_Logger->set_level(spdlog::level::trace);
         s_Logger->set_pattern("%^[%l] %v%$");
