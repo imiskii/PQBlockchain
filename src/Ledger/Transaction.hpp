@@ -14,6 +14,8 @@
 
 #include <chrono>
 #include <cstring>
+#include <set>
+#include <map>
 
 #include "PQBExceptions.hpp"
 #include "Serialize.hpp"
@@ -128,16 +130,26 @@ public:
 
 typedef std::shared_ptr<Transaction> TransactionPtr; ///< Shared pointer to transaction
 
-/**
- * @brief Comparator for ordering transactions, that are given as pointers to these transactions. Transactions are ordered by transaction ID.
- * 
- */
+/// @brief Comparator for ordering transactions, that are given as a pointer. Transactions are ordered by transaction ID.
 struct TransactionPtrComparator{
     bool operator()(const TransactionPtr& a, const TransactionPtr& b) const{
         return a->IDHash < b->IDHash;
     }
 };
 
+/// @brief Comparator for ordering transactions, that are given as a pointer. Transaction are ordered by sender address and
+/// if sender made multiple transactions then by sequence number of his transactions
+struct TransactionPtrOrder{
+    bool operator()(const TransactionPtr& a, const TransactionPtr& b) const{
+        if (a->senderWalletAddress == b->senderWalletAddress){
+            return a->sequenceNumber > b->sequenceNumber;
+        }
+        return a->senderWalletAddress < b->senderWalletAddress;
+    }
+};
+
+typedef std::set<TransactionPtr, TransactionPtrOrder> TransactionSet;
+typedef std::map<byte64_t, TransactionPtr> TransactionPool;
 
 } // namespace PQB
 

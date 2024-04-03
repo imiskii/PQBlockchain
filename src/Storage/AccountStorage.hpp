@@ -65,14 +65,21 @@ public:
      */
     bool setBalance(const byte64_t &walletID, AccountBalance &acc);
 
+    /// @brief Structure with data for counting account differences
+    struct AccountDifference{
+        byte64_t *id;            ///< pointer to identifier of account
+        signed long balanceDiff; ///< difference on account balance after applied transactions
+        uint32_t txSequence;     ///< largest sequence number of transaction for particular account
+    };
+
     /**
-     * @brief Update all account balances base on given block transactions set
+     * @brief Update all account balances base on given hash table of accound differences
      * 
-     * @param txSet set of transactions to update
+     * @param accDiffs hash table of account differences
      * 
      * @exception If sender or receiver wallet ID of any transaction is not in the database or if write to the database failed
      */
-    void setBalancesByTxSet(std::set<TransactionPtr, TransactionPtrComparator> &txSet);
+    void setBalancesByAccDiffs(std::unordered_map<std::string, AccountDifference> &accDiffs);
 
     /**
      * @brief Calculate merkle tree root hash of all accounts (account balances) in the database
@@ -85,16 +92,7 @@ protected:
     leveldb::DB* db; ///< Instance of LevelDB database for Accounts
 
 private:
-    struct AccountDifference{
-        byte64_t *id;
-        signed long balanceDiff;
-        uint32_t txSequence;
-    };
-
     leveldb::Options databaseOptions;
-
-    std::unordered_map<std::string, AccountDifference> countAccountDifferencesByTxSet(std::set<TransactionPtr, TransactionPtrComparator> &txSet);
-
 };
 
 

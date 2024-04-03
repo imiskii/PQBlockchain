@@ -40,7 +40,7 @@ namespace PQB{
             bytesToSend -= nBytes;
             bytesSent += nBytes;
         }
-        PQB_LOG_TRACE("NET", "{} message sent to {}", Message::messageTypeToString(message->getType()), connID);
+        PQB_LOG_TRACE("NET", "{} message sent to {}", Message::messageTypeToString(message->getType()), shortStr(connID));
     }
 
     Message *Connection::receiveMessage(bool *closeFlag){
@@ -68,7 +68,7 @@ namespace PQB{
         }
         delete[] buffer;
         if (newMsg->checkMessage()){
-            PQB_LOG_TRACE("NET", "{} message received from {}", Message::messageTypeToString(newMsg->getType()), connID);
+            PQB_LOG_TRACE("NET", "{} message received from {}", Message::messageTypeToString(newMsg->getType()), shortStr(connID));
             if (filterMessage(newMsg)){
                 return newMsg;
             }
@@ -100,7 +100,8 @@ namespace PQB{
             return false;
         case MessageType::VERSION:
             return !isConfirmed;
-        case MessageType::PROPOSAL:
+        case MessageType::BLOCKPROPOSAL:
+        case MessageType::TXSETPROPOSAL:
             return (isConfirmed && isUNL);
         default:
             return isConfirmed;

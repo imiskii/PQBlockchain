@@ -14,6 +14,7 @@
 
 #include <set>
 #include <vector>
+#include <memory>
 
 #include "PQBtypedefs.hpp"
 #include "Transaction.hpp"
@@ -28,8 +29,8 @@ class BlockHeader
 {
 public:
     uint32_t version;                       ///< Version of the block
+    uint32_t sequence;                      ///< Sequence number (block height)
     uint32_t size;                          ///< Block size in bytes
-    PQB::timestamp timestamp;               ///< Timestamp of block creation
     byte64_t transactionsMerkleRootHash;    ///< Merkle root hash of the block's transactions
     byte64_t previousBlockHash;             ///< Hash of the previous block
     byte64_t accountBalanceMerkleRootHash;  ///< Hash of the account balances
@@ -41,10 +42,10 @@ public:
     /// @brief Set attributes of the BlockHeader to zeros
     void setNull(){
         version = 0;
+        sequence = 0;
         transactionsMerkleRootHash.SetNull();
         previousBlockHash.SetNull();
         accountBalanceMerkleRootHash.SetNull();
-        timestamp = 0;
         size = 0;
     }
 
@@ -71,7 +72,7 @@ class BlockBody
 {
 public:
     uint32_t transactionCount;
-    std::set<TransactionPtr, TransactionPtrComparator> txSet; ///< Transaction set
+    TransactionSet txSet; ///< Transaction set
 
     BlockBody(){
         setNull();
@@ -111,6 +112,10 @@ public:
         setNull(); 
     }
 
+    Block(const BlockHeader &header) : BlockHeader(header){
+        BlockBody::setNull();
+    }
+
     /// @brief Set attributes of the Block to zeros and clear all elements of txSet
     void setNull(){
         BlockHeader::setNull();
@@ -121,10 +126,10 @@ public:
     BlockHeader getBlockHeader() const{
         BlockHeader hdr;
         hdr.version = version;
+        hdr.sequence = sequence;
         hdr.transactionsMerkleRootHash = transactionsMerkleRootHash;
         hdr.previousBlockHash = previousBlockHash;
         hdr.accountBalanceMerkleRootHash = accountBalanceMerkleRootHash;
-        hdr.timestamp = timestamp;
         hdr.size = size;
         return hdr;
     }
@@ -144,6 +149,11 @@ public:
     /// @exception if buffer has not enough size for the block deserialization
     void deserialize(const byteBuffer &buffer, size_t &offset);
 };
+
+
+
+typedef std::shared_ptr<Block> BlockPtr;
+typedef std::shared_ptr<BlockHeader> BlockHeaderPtr;
 
 
 } // namespace PQB

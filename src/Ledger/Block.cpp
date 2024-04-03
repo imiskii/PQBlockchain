@@ -27,8 +27,8 @@ namespace PQB{
 
     size_t BlockHeader::getSize(){
         return sizeof(version) +
+               sizeof(sequence) +
                sizeof(size) +
-               sizeof(timestamp) +
                sizeof(transactionsMerkleRootHash) +
                sizeof(previousBlockHash) +
                sizeof(accountBalanceMerkleRootHash);
@@ -44,8 +44,8 @@ namespace PQB{
         if (accountBalanceMerkleRootHash.IsNull())
             throw PQB::Exceptions::Block("Serialization: Missing block's accountBalanceMerkleRootHash");
         serializeField(buffer, offset, version);
+        serializeField(buffer, offset, sequence);
         serializeField(buffer, offset, size);
-        serializeField(buffer, offset, timestamp);
         serializeField(buffer, offset, transactionsMerkleRootHash);
         serializeField(buffer, offset, previousBlockHash);
         serializeField(buffer, offset, accountBalanceMerkleRootHash);
@@ -55,8 +55,8 @@ namespace PQB{
         if ((buffer.size() - offset) < getSize())
             throw PQB::Exceptions::Block("Deserialization: buffer size is too small for deserialization");
         deserializeField(buffer, offset, version);
+        deserializeField(buffer, offset, sequence);
         deserializeField(buffer, offset, size);
-        deserializeField(buffer, offset, timestamp);
         deserializeField(buffer, offset, transactionsMerkleRootHash);
         deserializeField(buffer, offset, previousBlockHash);
         deserializeField(buffer, offset, accountBalanceMerkleRootHash);
@@ -64,6 +64,7 @@ namespace PQB{
 
     void BlockBody::addTransaction(TransactionPtr tx){
         txSet.insert(tx);
+        transactionCount++;
     }
 
     size_t BlockBody::getSize() const{

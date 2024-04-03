@@ -18,9 +18,10 @@
 #include "Blob.hpp"
 #include "Transaction.hpp"
 #include "Block.hpp"
+#include "Account.hpp"
+#include "Proposal.hpp"
 #include "HashManager.hpp"
 #include "Serialize.hpp"
-#include "Account.hpp"
 
 namespace PQB{
 
@@ -35,12 +36,14 @@ enum class MessageType : uint32_t{
     ACK = 1,
     /// @brief  Message with one transaction in payload.
     TX = 100,
-    /// @todo fill
-    PROPOSAL = 101,
+    /// @brief Message proposing a block to a peer
+    BLOCKPROPOSAL = 101,
+    /// @brief Message poposing a set of transaction to a peer
+    TXSETPROPOSAL = 102,
     /// @brief  Message with one account in payload.
-    ACCOUNT = 102,
+    ACCOUNT = 104,
     /// @brief  Message with one block in payload.
-    BLOCK = 103,
+    BLOCK = 105,
     /// @brief  Message with multiple inventories. Inventory is pair of inventory type and identifier of item.
     /// This message is used to offer to some peer a data about for example block, transaction or account
     INV = 50,
@@ -199,8 +202,10 @@ public:
             return "INVENTORY";
         case MessageType::GETDATA:
             return "GETDATA";
-        case MessageType::PROPOSAL:
-            return "PROPOSAL";
+        case MessageType::BLOCKPROPOSAL:
+            return "BLOCK PROPOSAL";
+        case MessageType::TXSETPROPOSAL:
+            return "TX SET PROPOSAL";
         default:
             return "UNKNOW";
         }
@@ -407,6 +412,53 @@ private:
         message_hdr_t hdr;
         hdr.magicNum = MESSAGE_MAGIC_CONST;
         hdr.type = MessageType::GETDATA;
+        hdr.size = messageSize;
+        hdr.checkSum = 0;
+        return hdr;
+    }
+};
+
+class BlockProposalMessage : public Message{
+public:
+
+    BlockProposalMessage(size_t messageSize) : Message(constructMessageHeader(messageSize)) {}
+    BlockProposalMessage(message_hdr_t &messageHeader) : Message(messageHeader) {}
+
+    /// @brief messageStruct is PQB::BlockProposal object
+    void serialize(void *messageStruct) override;
+
+    /// @brief messageStruct is PQB::BlockProposal object
+    void deserialize(void *messageStruct) const override;
+
+private:
+    static message_hdr_t constructMessageHeader(size_t messageSize){
+        message_hdr_t hdr;
+        hdr.magicNum = MESSAGE_MAGIC_CONST;
+        hdr.type = MessageType::BLOCKPROPOSAL;
+        hdr.size = messageSize;
+        hdr.checkSum = 0;
+        return hdr;
+    } 
+};
+
+
+class TxSetProposalMessage : public Message{
+public:
+
+    TxSetProposalMessage(size_t messageSize) : Message(constructMessageHeader(messageSize)) {}
+    TxSetProposalMessage(message_hdr_t &messageHeader) : Message(messageHeader) {}
+
+    /// @brief messageStruct is PQB::TxSetProposal object
+    void serialize(void *messageStruct) override;
+
+    /// @brief messageStruct is PQB::TxSetProposal object
+    void deserialize(void *messageStruct) const override;
+
+private:
+    static message_hdr_t constructMessageHeader(size_t messageSize){
+        message_hdr_t hdr;
+        hdr.magicNum = MESSAGE_MAGIC_CONST;
+        hdr.type = MessageType::TXSETPROPOSAL;
         hdr.size = messageSize;
         hdr.checkSum = 0;
         return hdr;

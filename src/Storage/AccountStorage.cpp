@@ -60,15 +60,14 @@ bool AccountBalanceStorage::setBalance(const byte64_t &walletID, AccountBalance 
         PQB_LOG_ERROR("ACCOUNT STORAGE", "Failed to set account balance: {}", status.ToString());
         return false;
     }
-    PQB_LOG_TRACE("ACCOUNT STORAGE", "Balance {} with seq. {} set for account: {}", acc.balance, acc.txSequence, walletID.getHex());
+    PQB_LOG_TRACE("ACCOUNT STORAGE", "Balance {} with seq. {} set for account: {}", acc.balance, acc.txSequence, shortStr(walletID.getHex()));
     return true;
 }
 
-void AccountBalanceStorage::setBalancesByTxSet(std::set<TransactionPtr, TransactionPtrComparator> &txSet){
-    std::unordered_map<std::string, AccountDifference> txDiffs = countAccountDifferencesByTxSet(txSet);
+void AccountBalanceStorage::setBalancesByAccDiffs(std::unordered_map<std::string, AccountDifference> &accDiffs){
     leveldb::WriteBatch batch;
     leveldb::Status status;
-    for (const auto &tx : txDiffs){
+    for (const auto &tx : accDiffs){
         AccountBalance acc;
         if (!getBalance(*tx.second.id, acc)){
             std::string err = "Set Balances: wallet ID: " + tx.first + " is not in the database!"; 
@@ -107,28 +106,6 @@ byte64_t AccountBalanceStorage::getAccountsMerkleRootHash(){
     // Shrink the accountHashes vector and do Merke Root hash computation
     accountHashes.shrink_to_fit();
     return ComputeMerkleRoot(std::move(accountHashes));
-}
-
-std::unordered_map<std::string, AccountBalanceStorage::AccountDifference> AccountBalanceStorage::countAccountDifferencesByTxSet(std::set<TransactionPtr, TransactionPtrComparator> &txSet){
-    std::unordered_map<std::string, AccountDifference> txDiffs;
-    for (const auto &tx : txSet){
-        std::string senderHash = tx->senderWalletAddress.getHex();
-        const auto senderIt = txDiffs.find(senderHash);
-        if (senderIt != txDiffs.end()){
-            senderIt->second.balanceDiff -= tx->cashAmount;
-            senderIt->second.txSequence = (tx->sequenceNumber > senderIt->second.txSequence ? tx->sequenceNumber : senderIt->second.txSequence);
-        } else {
-            txDiffs[senderHash] = {.id=&tx->senderWalletAddress, .balanceDiff=(0-tx->cashAmount), .txSequence=tx->sequenceNumber};
-        }
-        std::string receiverHash = tx->receiverWalletAddress.getHex();
-        const auto receiverIt = txDiffs.find(receiverHash);
-        if (receiverIt != txDiffs.end()){
-            receiverIt->second.balanceDiff += tx->cashAmount;
-        } else {
-            txDiffs[receiverHash] = {.id=&tx->receiverWalletAddress, .balanceDiff=tx->cashAmount, .txSequence=0};
-        }
-    }
-    return txDiffs;
 }
 
 /*** AccountAddressStorage ***/
@@ -176,7 +153,7 @@ bool AccountAddressStorage::setAddresses(const byte64_t &walletID, AccountAddres
         PQB_LOG_ERROR("ACCOUNT STORAGE", "Failed to set account addresses: {}", status.ToString());
         return false;
     }
-    PQB_LOG_TRACE("ACCOUNT STORAGE", "Addresses updated for account: {}", walletID.getHex());
+    PQB_LOG_TRACE("ACCOUNT STORAGE", "Addresses updated for account: {}", shortStr(walletID.getHex()));
     return true;
 }
 

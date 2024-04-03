@@ -61,7 +61,7 @@ public:
      * @return true if operation was successful
      * @return false if operation fails
      */
-    bool setBlock(const Block &block);
+    bool setBlock(const Block *block);
 
     /**
      * @brief Put block into database

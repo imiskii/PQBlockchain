@@ -209,6 +209,36 @@ namespace PQB{
         }
     }
 
+    /***** BlockProposal Message *****/
+
+    void BlockProposalMessage::serialize(void *messageStruct){
+        BlockProposal *mData = static_cast<BlockProposal*>(messageStruct);
+        size_t offset = 0;
+        serializeHeader(offset);
+        mData->serialize(data, offset);
+    }
+
+    void BlockProposalMessage::deserialize(void *messageStruct) const{
+        BlockProposal *mData = static_cast<BlockProposal*>(messageStruct);
+        size_t offset = getHeaderSize();
+        mData->deserialize(data, offset);
+    }
+
+    /***** TxSetProposal Message *****/
+
+    void TxSetProposalMessage::serialize(void *messageStruct){
+        TxSetProposal *mData = static_cast<TxSetProposal*>(messageStruct);
+        size_t offset = 0;
+        serializeHeader(offset);
+        mData->serialize(data, offset);
+    }
+
+    void TxSetProposalMessage::deserialize(void *messageStruct) const{
+        TxSetProposal *mData = static_cast<TxSetProposal*>(messageStruct);
+        size_t offset = getHeaderSize();
+        mData->deserialize(data, offset);
+    }
+
     /***** MessageCreator *****/
 
     namespace MessageCreator
@@ -223,8 +253,10 @@ namespace PQB{
                 return new AckMessage(msgHeader);
             case MessageType::TX:
                 return new TransactionMessage(msgHeader);
-            case MessageType::PROPOSAL:
-                /// @todo add: return new ProposalMessage(msgHeader);
+            case MessageType::BLOCKPROPOSAL:
+                return new BlockProposalMessage(msgHeader);
+            case MessageType::TXSETPROPOSAL:
+                return new TxSetProposalMessage(msgHeader);
             case MessageType::BLOCK:
                 return new BlockMessage(msgHeader);
             case MessageType::ACCOUNT:

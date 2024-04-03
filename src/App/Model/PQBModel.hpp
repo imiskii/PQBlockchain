@@ -16,6 +16,7 @@
 #include "BlocksStorage.hpp"
 #include "AccountStorage.hpp"
 #include "MessageManagement.hpp"
+#include "Chain.hpp"
 #include "Consensus.hpp"
 
 namespace PQB{
@@ -27,7 +28,8 @@ private:
     AccountStorage *accS;
     ConnectionManager *connMng;
     MessageProcessor *msgPrc;
-    Consensus *consensus;
+    ConsensusWrapper *consensus;
+    Chain *chain;
 
     /// @brief Trys to open all configuration files and databases needed for PQB. If operation success return true, else return false
     bool openConfigurationAndDatabase();

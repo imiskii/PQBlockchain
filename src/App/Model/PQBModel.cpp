@@ -18,6 +18,7 @@ namespace PQB{
        wallet = new Wallet(config_file_path);
        blockS = new BlocksStorage();
        accS = new AccountStorage();
+       chain = nullptr;
        consensus = nullptr;
        connMng = nullptr;
        msgPrc = nullptr;
@@ -30,21 +31,25 @@ namespace PQB{
         delete accS;
         if (consensus)
             delete consensus;
-        if (connMng)
-            delete connMng;
         if (msgPrc)
             delete msgPrc;
+        if (connMng)
+            delete connMng;
+        if (chain)
+            delete chain;
     }
 
     bool PQBModel::initializeManagers(NodeType node_type){
         if (!openConfigurationAndDatabase()){
             return false;
         }
-        consensus = new Consensus();
         msgPrc = new MessageProcessor(accS, blockS, consensus, wallet);
         std::string walletID = wallet->getWalletID().getHex();
         connMng = new ConnectionManager(msgPrc, accS->addrDB, walletID, node_type);
         msgPrc->assignConnectionManager(connMng);
+        chain = new Chain(wallet->getUNL().size(), wallet->getWalletID().getHex());
+        consensus = new ConsensusWrapper(chain, blockS, accS, wallet);
+        consensus->assignConnectionManager(connMng);
         return true;
     }
 

@@ -10,6 +10,7 @@
 
 
 #include "MessageManagement.hpp"
+#include "Consensus.hpp"
 #include "Log.hpp"
 
 namespace PQB
@@ -47,7 +48,7 @@ namespace PQB
     }
 
     void ConnectionManager::addConnectionRequest(ConnectionRequest_t req){
-        PQB_LOG_TRACE("CONNECTION MANAGER", "Connection request {} added", req.peerID);
+        PQB_LOG_TRACE("CONNECTION MANAGER", "Connection request {} added", shortStr(req.peerID));
         std::lock_guard<std::mutex> lock(connectionRequestQueueMutex);
         connectionRequestQueue.push(req);
     }
@@ -85,7 +86,7 @@ namespace PQB
                 deleteConnection(exConn->getConnectionSocketFD());
             }
         }
-        PQB_LOG_TRACE("CONNECTION MANAGER", "Connection {} renamed to {}", thisConn->connID, peerID);
+        PQB_LOG_TRACE("CONNECTION MANAGER", "Connection {} renamed to {}", shortStr(thisConn->connID), shortStr(peerID));
         updatePeerIdOfConnectionInConnectionPool(connectionID, thisConn->connID, peerID);
         thisConn->isConfirmed = true;
         /// Send ACK
@@ -98,17 +99,17 @@ namespace PQB
     bool ConnectionManager::createNewConnection(std::string &peerID, std::vector<std::string> &addresses, bool isOnUNL){
         // Check if this connection does not already exists
         if (isConnectionInConnectionPool(peerID)){
-            PQB_LOG_TRACE("CONNECTION MANAGER", "Connection {} alread exists", peerID);
+            PQB_LOG_TRACE("CONNECTION MANAGER", "Connection {} alread exists", shortStr(peerID));
             return false;
         }
 
         // Create new Connection
         Sock *sock = connectToPeer(addresses);
         if (sock == nullptr){
-            PQB_LOG_ERROR("CONNECTION MANAGER", "Establishing connection with peer: {} failed", peerID);
+            PQB_LOG_ERROR("CONNECTION MANAGER", "Establishing connection with peer: {} failed", shortStr(peerID));
             return false;
         }
-        PQB_LOG_INFO("CONNECTION MANAGER", "Connection with peer: {} established", peerID);
+        PQB_LOG_INFO("CONNECTION MANAGER", "Connection with peer: {} established", shortStr(peerID));
         Connection *connection = new Connection(peerID, sock, isOnUNL);
         if (!addConnectionToConnectionPool(sock->getSocketFD(), connection, peerID)){
             delete connection;
@@ -137,7 +138,7 @@ namespace PQB
 
     void ConnectionManager::deleteConnection(const socket_t connectionID){
         auto connection = getConnectionFromConnectionPool(connectionID);
-        PQB_LOG_INFO("CONNECTION MANAGER", "Connection with {} was closed", connection->connID);
+        PQB_LOG_INFO("CONNECTION MANAGER", "Connection with {} was closed", shortStr(connection->connID));
         if (connection != nullptr){
             deleteConnectionFromConnectionPool(connectionID, connection->connID);
             delete connection;
@@ -408,7 +409,7 @@ namespace PQB
             peerHash.setHex(req.peerID);
             AccountAddress accAddrs;
             if (!addrStorage->getAddresses(peerHash, accAddrs)){
-                PQB_LOG_ERROR("CONNECTION MANAGER", "{} account is not in the database", req.peerID);
+                PQB_LOG_ERROR("CONNECTION MANAGER", "{} account is not in the database", shortStr(req.peerID));
                 return;
             }
             
@@ -421,7 +422,7 @@ namespace PQB
 /************************************************************************/
 
 
-    MessageProcessor::MessageProcessor(AccountStorage *accountStorage, BlocksStorage *blockStorage, Consensus *consensusAlgorithm, Wallet *localWallet)
+    MessageProcessor::MessageProcessor(AccountStorage *accountStorage, BlocksStorage *blockStorage, ConsensusWrapper *consensusAlgorithm, Wallet *localWallet)
     : connMng(nullptr), accStor(accountStorage), blockStor(blockStorage), consensus(consensusAlgorithm), wallet(localWallet){
         processingRun = true;
         processingThread = std::jthread(&MessageProcessor::messageProcessor, this);
@@ -477,6 +478,41 @@ namespace PQB
         return true;
     }
 
+    bool MessageProcessor::checkProposal(const BlockProposalPtr &prop){
+        // Check structure of proposalň
+        if (!prop->check()){
+            return false;
+        }
+        // Check if issuer exists
+        AccountBalance accBalance;
+        if (!accStor->blncDB->getBalance(prop->issuer, accBalance)){
+            return false;
+        }
+        // Check proposal signature
+        if (!prop->verify(accBalance.publicKey)){
+            return false;
+        }
+        return true;
+    }
+
+    bool MessageProcessor::checkProposal(const TxSetProposalPtr &prop){
+        // Check structure of proposal
+        if (!prop->check()){
+            return false;
+        }
+        // Check if issuer exists
+        AccountBalance accBalance;
+        if (!accStor->blncDB->getBalance(prop->issuer, accBalance)){
+            return false;
+        }
+        // Check proposal signature
+        if (!prop->verify(accBalance.publicKey)){
+            return false;
+        }
+        return true;
+    }
+
+
     void MessageProcessor::addMessageToProcessingQueue(message_item_t &msgi){
         std::lock_guard<std::mutex> lock(processingQueueMutex);
         processingQueue.push(msgi);
@@ -520,8 +556,11 @@ namespace PQB
         case MessageType::TX:
             procTransactionMessage(msgi);
             break;
-        case MessageType::PROPOSAL:
-            procProposalMessage(msgi);
+        case MessageType::BLOCKPROPOSAL:
+            procBlockProposalMessage(msgi);
+            break;
+        case MessageType::TXSETPROPOSAL:
+            procTxSetProposalMessage(msgi);
             break;
         case MessageType::BLOCK:
             procBlockMessage(msgi);
@@ -559,7 +598,6 @@ namespace PQB
             TransactionPtr msgData = std::make_shared<Transaction>();
             msg->deserialize(msgData.get());
             if (checkTransaction(msgData)){
-                /// @todo if transaction is not in consensus transaction pool add it here
                 consensus->addTransactionToPool(msgData);
                 waitingData.erase(msgData->IDHash);
                 forwardInvMessage(msgData->IDHash, InvType::TX, msgi);
@@ -568,8 +606,55 @@ namespace PQB
         delete msgi.msg;
     }
 
-    void MessageProcessor::procProposalMessage(const message_item_t &msgi){
-        /// @todo Add proposal of transaction to proposal pool to message sender ID
+    void MessageProcessor::procBlockProposalMessage(const message_item_t &msgi){
+        BlockProposalMessage *msg = dynamic_cast<BlockProposalMessage*>(msgi.msg);
+        if (msg != nullptr){
+            BlockProposalPtr msgData = std::make_shared<BlockProposal>();
+            msg->deserialize(msgData.get());
+            if (checkProposal(msgData)){
+                consensus->notifyBlockProposal(msgData);
+            }
+            // Deserialize, Check structure (accountHash = is null), signature
+            // Forward it to ConsensusWrapper
+            // There, find the coresponding transaction set and create Block object
+            // If coresponding tx set is missing pass (ask for it)
+            // Add it to Chain
+        }
+        delete msgi.msg;
+    }
+
+    void MessageProcessor::procTxSetProposalMessage(const message_item_t &msgi){
+        TxSetProposalMessage *msg = dynamic_cast<TxSetProposalMessage*>(msgi.msg);
+        if (msg != nullptr){
+            TxSetProposalPtr msgData = std::make_shared<TxSetProposal>();
+            msg->deserialize(msgData.get());
+            if (checkProposal(msgData)){
+                // Create new transaction set and put there exising transaction that were proposed
+                // This will save some memory, because there won't be allocated memory for same transactions twice
+                TransactionSet newSet;
+                for (auto tx : msgData->txSet.txSet){
+                    TransactionPtr exTx = consensus->getTransactionFromPool(tx->IDHash);
+                    if (exTx != nullptr){
+                        newSet.insert(exTx);
+                    } else { // Proposed Tx Set include transaction that is not in our transaction pool
+                        // Check this transaction
+                        if (checkTransaction(tx)){
+                            // Insert it to newSet and transaction pool, if it is on waiting list remove it
+                            newSet.insert(tx);
+                            consensus->addTransactionToPool(tx);
+                            auto wit = waitingData.find(tx->IDHash);
+                            if (wit != waitingData.end()){
+                                waitingData.erase(wit);
+                            }
+                        }
+                    }
+                }
+                msgData->txSet.txSet.clear();
+                msgData->txSet.txSet = newSet;
+                consensus->notifyTxSetProposal(msgData);
+            }
+        }
+        delete msgi.msg;
     }
 
     void MessageProcessor::procBlockMessage(const message_item_t &msgi){
@@ -678,7 +763,6 @@ namespace PQB
 
     bool MessageProcessor::procInvTransaction(const inv_message_t &inv){
         if (waitingData.find(inv.itemID) != waitingData.end()){
-            /// @todo if transaction is not in consensus transaction pool
             if (!consensus->isTransactionInPool(inv.itemID)){
                 waitingData.insert(inv.itemID);
                 return true;
@@ -738,9 +822,8 @@ namespace PQB
     }
 
     void MessageProcessor::procGetTransaction(const byte64_t &tx_id, const message_item_t &msgi){
-        /// @todo get transaction from consensus transaction pool
         TransactionPtr tx = consensus->getTransactionFromPool(tx_id);
-        if (tx){
+        if (tx != nullptr){
             TransactionMessage *msg = new TransactionMessage(tx->getSize());
             msg->serialize(tx.get());
             ConnectionManager::MessageRequest_t req = {.type=ConnectionManager::MessageRequestType::ONE, .connectionID=msgi.connection_id, .peerID=msgi.peer_id, .message=msg};

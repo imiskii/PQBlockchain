@@ -43,7 +43,7 @@ namespace PQB{
             txData.sequenceNumber = tx.sequenceNumber;
             txData.timestamp = tx.timestamp;
             txData.versionNumber = tx.version;
-            std::pair<TransactionData, bool> p = std::make_pair(txData, tx.confirmed);
+            std::pair<TransactionData, TxState> p = std::make_pair(txData, TxState(tx.confirmed));
             txRecords.emplace(tx.txID, p);
         }
 
@@ -72,7 +72,7 @@ namespace PQB{
             rtd.version = tx.second.first.versionNumber;
             rtd.timestamp = tx.second.first.timestamp;
             rtd.txID = tx.first;
-            rtd.confirmed = tx.second.second;
+            rtd.confirmed = uint8_t(tx.second.second);
             rwd.txRecords.push_back(rtd);
         }
 
@@ -100,18 +100,27 @@ namespace PQB{
 
         txSequenceNumber++;
         balance -= amount;
-        std::pair<TransactionData, bool> p = std::make_pair(tx->getTransactionData(), false);
+        std::pair<TransactionData, TxState> p = std::make_pair(tx->getTransactionData(), TxState::WAITING);
         txRecords.emplace(tx->IDHash.getHex(), p);
         return tx;
     }
 
-    void Wallet::confirmTransaction(std::string &transactionID){
+    void Wallet::updateTransaction(std::string transactionID, TxState status){
         auto it = txRecords.find(transactionID);
         if (it != txRecords.end())
-            it->second.second = true;
+            it->second.second = status;
     }
 
-    void Wallet::genNewKeys(){
+    void Wallet::receivedTransaction(std::string transactionID, TransactionData txData, TxState status){
+        if (status == TxState::CONFIRMED){
+            addToBlance(txData.cashAmount);
+        }
+        std::pair<TransactionData, TxState> value = std::make_pair(std::move(txData), status);
+        txRecords.emplace(transactionID, value);
+    }
+
+    void Wallet::genNewKeys()
+    {
         Signer::GetInstance()->genKeys(secretKey, publicKey);
         if (walletID.IsNull())
             HashMan::SHA512_hash(&walletID, publicKey.data(), publicKey.size());
@@ -141,7 +150,7 @@ namespace PQB{
             << std::setw(21) << tx.second.first.cashAmount
             << std::setw(21) << tx.second.first.sequenceNumber
             << std::setw(21) << buffer
-            << std::setw(11) << (tx.second.second ? "confirmed" : "waiting")
+            << std::setw(11) << TxStateToString(tx.second.second)
             << std::endl;
         }
         return oss.str();

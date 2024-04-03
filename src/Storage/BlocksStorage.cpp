@@ -68,11 +68,11 @@ bool BlocksStorage::getRawBlock(const byte64_t &blockHash, byteBuffer &buffer){
     return false;
 }
 
-bool BlocksStorage::setBlock(const Block &block){
+bool BlocksStorage::setBlock(const Block *block){
     byteBuffer buffer;
     size_t offset = 0;
-    block.serialize(buffer, offset);
-    byte64_t blockHash = block.getBlockHash();
+    block->serialize(buffer, offset);
+    byte64_t blockHash = block->getBlockHash();
     if (setBlock(blockHash, buffer))
         return true;
     return false;
@@ -85,7 +85,7 @@ bool BlocksStorage::setBlock(const byte64_t &blockHash, const byteBuffer &buffer
         PQB_LOG_ERROR("BLOCK STORAGE", "Failed to get block: {}", status.ToString());
         return false;
     }
-    PQB_LOG_TRACE("BLOCK STORAGE", "Block added to database: {}", blockHash.getHex());
+    PQB_LOG_TRACE("BLOCK STORAGE", "Block {} added to database", shortStr(blockHash.getHex()));
     return true;
 
 }

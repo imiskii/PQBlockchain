@@ -32,7 +32,7 @@ public:
         PQB::cash cashAmount;
         PQB::timestamp timestamp;
         uint32_t sequenceNumber;
-        bool confirmed;
+        uint8_t confirmed;
         std::string txID;
         std::string senderID;
         std::string receiverID;

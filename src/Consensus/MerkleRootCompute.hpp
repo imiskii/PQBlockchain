@@ -43,6 +43,16 @@ byte64_t ComputeMerkleRoot(std::vector<byte64_t> leafsHashes);
  */
 byte64_t ComputeBlocksMerkleRoot(PQB::Block &block);
 
+
+/**
+ * @brief Compute Merkle Tree Root of transaction set
+ * 
+ * @param set 
+ * @return byte64_t SHA-512 Merkle Root Hash
+ */
+byte64_t ComputeTxSetMerkleRoot(TransactionSet &set);
+
+
 } // PQB namespace
 
 

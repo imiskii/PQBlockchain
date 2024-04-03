@@ -100,6 +100,17 @@ private:
     const std::string m_msg;
 };
 
+
+class Proposal : public std::exception{
+public:
+    Proposal(const std::string& exceptionMessage) : m_msg(exceptionMessage) {}
+    const char* what() const noexcept override{
+        return m_msg.c_str();
+    }
+private:
+    const std::string m_msg;
+};
+
 }
 
 

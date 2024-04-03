@@ -37,12 +37,12 @@
 #include "Connection.hpp"
 #include "AccountStorage.hpp"
 #include "Wallet.hpp"
-#include "Consensus.hpp"
 
 
 namespace PQB
 {
 
+class ConsensusWrapper;
 class MessageProcessor;
 
 
@@ -269,7 +269,7 @@ private:
 class MessageProcessor{
 public:
     
-    MessageProcessor(AccountStorage *accountStorage, BlocksStorage *blockStorage, Consensus *consensusAlgorithm, Wallet *localWallet);
+    MessageProcessor(AccountStorage *accountStorage, BlocksStorage *blockStorage, ConsensusWrapper *consensusAlgorithm, Wallet *localWallet);
     ~MessageProcessor();
 
     /// @brief Assign connectionManager to this message processor 
@@ -298,12 +298,22 @@ public:
      */
     bool checkTransaction(const TransactionPtr tx);
 
+    /**
+     * @brief Check structure and signature of a proposal
+     * 
+     * @param prop proposal to check
+     * @return true if proposal is valid
+     * @return false if proposal is not valid
+     */
+    bool checkProposal(const BlockProposalPtr &prop);
+    bool checkProposal(const TxSetProposalPtr &prop);
+
 private:
 
     ConnectionManager *connMng;
     AccountStorage *accStor;
     BlocksStorage *blockStor;
-    Consensus *consensus;
+    ConsensusWrapper *consensus;
     Wallet *wallet;
 
     /// @brief Item for processing
@@ -366,7 +376,9 @@ private:
 
     void procTransactionMessage(const message_item_t &msgi);
 
-    void procProposalMessage(const message_item_t &msgi);
+    void procBlockProposalMessage(const message_item_t &msgi);
+
+    void procTxSetProposalMessage(const message_item_t &msgi);
 
     void procBlockMessage(const message_item_t &msgi);
 

@@ -35,6 +35,27 @@ struct TransactionDataTimestampComparator;
 
 /// @brief Data stored in a wallet
 class WalletData{
+public:
+
+    enum class TxState : uint8_t{
+        CANCELED = 0,
+        CONFIRMED = 1,
+        WAITING = 2
+    };
+
+    static std::string TxStateToString(const TxState &state){
+        switch (state)
+        {
+        case TxState::CANCELED:
+            return "canceled";
+        case TxState::CONFIRMED:
+            return "confirmed";
+        case TxState::WAITING:
+            return "waiting";
+        default:
+            return "unknow";
+        }
+    }
 
 protected:
     byteBuffer publicKey;
@@ -44,7 +65,7 @@ protected:
     std::vector<std::string> nodeUNL;
     
     /// @brief Pool of transactions made with this wallet, the bool indicates if transaction is confirmed and included in a block or not
-    std::map<std::string, std::pair<TransactionData, bool>> txRecords;
+    std::map<std::string, std::pair<TransactionData, TxState>> txRecords;
     PQB::cash balance;
     uint32_t txSequenceNumber;
 
@@ -68,6 +89,7 @@ public:
     std::vector<std::string>& getAddressList() { return nodeAddresses; }
     std::vector<std::string>& getUNL() { return nodeUNL; }
     void setBalance(PQB::cash newBalance) { balance = newBalance; }
+    void addToBlance(PQB::cash cashToAdd) { balance += cashToAdd; }
 
 };
 
@@ -98,9 +120,16 @@ public:
 
     /// @todo confirmTx, cancelTx, printTxRecords, keep track if transaction is confirmed or not
 
-    /// @brief Set transaction in transaction records as confirmed
+    /// @brief Set transaction in transaction records given `status`
     /// @param transactionID hexadecimal id of a transaction
-    void confirmTransaction(std::string &transactionID);
+    /// @param status status to assign
+    void updateTransaction(std::string transactionID, TxState status);
+
+    /// @brief Add transaction to transaction records
+    /// @param transactionID identifier of the transaction
+    /// @param txData transaction data
+    /// @param status status of transaction
+    void receivedTransaction(std::string transactionID, TransactionData txData, TxState status);
     
     /// @brief Generate new pair of keys for making digital signatures
     void genNewKeys();

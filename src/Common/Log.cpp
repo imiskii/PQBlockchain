@@ -23,6 +23,16 @@ namespace PQB{
         s_Logger->set_pattern("%^[%l] %v%$");
     }
 
+
+    std::string_view shortStr(const std::string_view &input, size_t maxLength){
+        if (input.size() <= maxLength){
+            return input;
+        } else {
+            return input.substr(0, maxLength);
+        }
+        return std::string_view();
+    }
+
 } // namespace PQB
 
 /* END OF FILE */

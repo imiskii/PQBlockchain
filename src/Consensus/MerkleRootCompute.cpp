@@ -46,6 +46,20 @@ byte64_t ComputeBlocksMerkleRoot(PQB::Block &block){
 }
 
 
+byte64_t ComputeTxSetMerkleRoot(TransactionSet &set){
+    std::vector<byte64_t> txHashes;
+    if(set.size() & 1){
+        txHashes.reserve(set.size()+1);
+    }else{
+        txHashes.reserve(set.size());
+    }
+    
+    for(const auto &tx : set){
+        txHashes.push_back(tx->IDHash);
+    }
+    return ComputeMerkleRoot(std::move(txHashes));
+}
+
 } // PQB namespace
 
 

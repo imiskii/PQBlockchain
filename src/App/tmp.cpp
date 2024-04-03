@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string>
 #include <memory>
+#include <unordered_map>
+#include "Consensus.hpp"
 #include "Transaction.hpp"
 #include "Block.hpp"
 #include "Blob.hpp"
@@ -91,6 +93,7 @@ int main(int argc, char *argv[]){
 
     PQB::Block b;
     b.version = 1;
+    b.sequence = 1;
     b.previousBlockHash = hash3;
 
     std::string receiverHash = hash2.getHex();
@@ -110,10 +113,12 @@ int main(int argc, char *argv[]){
     b.addTransaction(tx);
 
     b.size = b.getSize();
-    b.timestamp = 45;
     b.transactionCount = 3;
     b.transactionsMerkleRootHash = PQB::ComputeBlocksMerkleRoot(b);
-    accStorage.blncDB->setBalancesByTxSet(b.txSet);
+    
+    std::unordered_map<std::string, PQB::AccountBalanceStorage::AccountDifference> accDiffs;
+    PQB::ConsensusWrapper::countAccountDifferencesByTxSet(accStorage.blncDB, wallet, b.txSet, accDiffs);
+    accStorage.blncDB->setBalancesByAccDiffs(accDiffs);
     b.accountBalanceMerkleRootHash = accStorage.blncDB->getAccountsMerkleRootHash();
 
     byte64_t bHash = b.getBlockHash();
@@ -170,7 +175,6 @@ int main(int argc, char *argv[]){
     std::cout << std::endl << "Account hash for control " << accountHash.getHex() << std::endl << std::endl;
 
 
-    wallet->confirmTransaction(txHash);
     std::cout << wallet->outputWalletTxRecords() << std::endl;    
     wallet->saveConfigurationToFile();
 
