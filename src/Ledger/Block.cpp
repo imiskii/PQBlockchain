@@ -20,7 +20,7 @@ namespace PQB{
         byteBuffer buffer;
         size_t offset = 0;
         buffer.resize(getSize());
-        serialize(buffer, offset);
+        serialize(buffer, offset, true);
         HashMan::SHA512_hash(&blockHash, buffer.data(), buffer.size());
         return blockHash;
     }
@@ -34,15 +34,17 @@ namespace PQB{
                sizeof(accountBalanceMerkleRootHash);
     }
 
-    void BlockHeader::serialize(byteBuffer &buffer, size_t &offset) const{
+    void BlockHeader::serialize(byteBuffer &buffer, size_t &offset, bool skipChecks) const{
         if ((buffer.size() - offset) < getSize())
             throw PQB::Exceptions::Block("Serialization: buffer size is too small for serialization");
-        if (transactionsMerkleRootHash.IsNull())
-            throw PQB::Exceptions::Block("Serialization: Missing block's transactionsMerkleRootHash");
-        if (previousBlockHash.IsNull())
-            throw PQB::Exceptions::Block("Serialization: Missing block's previousBlockHash");
-        if (accountBalanceMerkleRootHash.IsNull())
-            throw PQB::Exceptions::Block("Serialization: Missing block's accountBalanceMerkleRootHash");
+        if (!skipChecks){
+            if (transactionsMerkleRootHash.IsNull())
+                throw PQB::Exceptions::Block("Serialization: Missing block's transactionsMerkleRootHash");
+            if (previousBlockHash.IsNull())
+                throw PQB::Exceptions::Block("Serialization: Missing block's previousBlockHash");
+            if (accountBalanceMerkleRootHash.IsNull())
+                throw PQB::Exceptions::Block("Serialization: Missing block's accountBalanceMerkleRootHash");
+        }
         serializeField(buffer, offset, version);
         serializeField(buffer, offset, sequence);
         serializeField(buffer, offset, size);

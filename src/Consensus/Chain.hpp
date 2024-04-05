@@ -15,6 +15,8 @@
 #include <map>
 #include <memory>
 #include <utility>
+#include <sstream>
+#include "PQBconstants.hpp"
 #include "Blob.hpp"
 #include "Block.hpp"
 
@@ -92,6 +94,13 @@ public:
         genesis->getSize();
         return genesis;
     }
+
+    /**
+     * @brief Put Chain representation to the string stream `ss`
+     * 
+     * @param ss [out] string stream
+     */
+    void putChainDataToStringStream(std::stringstream &ss);
 
 private:
 

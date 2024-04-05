@@ -448,7 +448,8 @@ namespace PQB
             if (!earlyProcessing(msgi)){
                 addMessageToProcessingQueue(msgi);
             } else {
-                PQB_LOG_TRACE("MESSAGE PROCESSOR", "{} message processed", Message::messageTypeToString(msgType));
+                PQB_LOG_TRACE("MESSAGE PROCESSOR", "Message of type {} from peer {} was processed", 
+                            Message::messageTypeToString(msgType), shortStr(peerID));
             }
         }
     }
@@ -534,8 +535,10 @@ namespace PQB
             lock.unlock();
 
             MessageType msgType = msg.msg->getType(); // save message type for log
+            std::string_view msgSender = shortStr(msg.peer_id);
             lateProcessing(msg);
-            PQB_LOG_TRACE("MESSAGE PROCESSOR", "{} message processed", Message::messageTypeToString(msgType));
+            PQB_LOG_TRACE("MESSAGE PROCESSOR", "Message of type {} from peer {} was processed", 
+                        Message::messageTypeToString(msgType), msgSender);
         }
     }
 

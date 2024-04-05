@@ -43,12 +43,12 @@ namespace PQB{
         if (!openConfigurationAndDatabase()){
             return false;
         }
+        consensus = new ConsensusWrapper(chain, blockS, accS, wallet);
         msgPrc = new MessageProcessor(accS, blockS, consensus, wallet);
         std::string walletID = wallet->getWalletID().getHex();
         connMng = new ConnectionManager(msgPrc, accS->addrDB, walletID, node_type);
         msgPrc->assignConnectionManager(connMng);
         chain = new Chain(wallet->getUNL().size(), wallet->getWalletID().getHex());
-        consensus = new ConsensusWrapper(chain, blockS, accS, wallet);
         consensus->assignConnectionManager(connMng);
         return true;
     }
@@ -88,6 +88,33 @@ namespace PQB{
         connMng->addMessageRequest(req);
         consensus->addTransactionToPool(tx);
         return "Transaction was successfully created.";
+    }
+
+    std::string_view PQBModel::getLocalWalletId(){
+        return wallet->getWalletID().getHex();
+    }
+
+    void PQBModel::getDataToPrint(std::stringstream &ss, PrintData whatData, std::string id){
+        switch (whatData)
+        {
+        case PrintData::WALLET_TXs:
+            wallet->outputWalletTxRecords(ss);
+            break;
+        case PrintData::BLOCKS:
+            blockS->putBlockHeadersDataToStringStream(ss);
+            break;
+        case PrintData::BLOCK_TXs:
+            blockS->putBlockTxDataToStringStream(id, ss);
+            break;
+        case PrintData::ACCOUNTS:
+            accS->blncDB->putAccountDataToStringStream(ss);
+            break;
+        case PrintData::CHAIN:
+            chain->putChainDataToStringStream(ss);
+            break;
+        default:
+            break;
+        }
     }
 
 } // namespace PQB

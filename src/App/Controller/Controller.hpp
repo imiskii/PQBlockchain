@@ -56,7 +56,13 @@ private:
     const std::unordered_map<std::string, CommandCreator*> commandMap = {
         {"exit", new ExitCC()},
         {"echo", new EchoCC()},
-        {"createTx", new CreateTxCC()}
+        {"createTx", new CreateTxCC()},
+        {"whoami", new WhoAmICC()},
+        {"walletTxs", new PrintWalletTxCC()},
+        {"blocks", new PrintBlocksCC()},
+        {"blockTxs", new PrintBlockTxsCC()},
+        {"accs", new PrintAccountsCC()},
+        {"chain", new PrintChainCC()}
     };
 };
 

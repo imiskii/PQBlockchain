@@ -34,6 +34,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <utility>
+#include "PQBconstants.hpp"
 #include "MerkleRootCompute.hpp"
 #include "BlocksStorage.hpp"
 #include "AccountStorage.hpp"

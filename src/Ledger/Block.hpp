@@ -59,7 +59,10 @@ public:
     /// @brief Serialize BlockHeader
     /// @param buffer buffer for serialization
     /// @param offset offset to the buffer
-    void serialize(byteBuffer &buffer, size_t &offset) const;
+    /// @param skipChecks flag telling if there should be made checks if all importatant fields are filled (default is false)
+    /// @exception if buffer has not enough size for the block serialization or when `skipChecks` is set to true if important fields are not 
+    /// specified (such as transactionsMerkleRootHash, previousBlockHash, and accountBalanceMerkleRootHash)
+    void serialize(byteBuffer &buffer, size_t &offset, bool skipChecks = false) const;
 
     /// @brief Deserialize BlockHeader
     /// @param buffer buffer with serialized data
@@ -93,7 +96,7 @@ public:
     /// @brief Serialize BlockBody
     /// @param buffer buffer for serialization
     /// @param offset offset to the buffer
-    /// @exception if buffer has not enough size for the block serialization or if important fields are not specified (such as transactionsMerkleRootHash, previousBlockHash, and accountBalanceMerkleRootHash)
+    /// @exception if buffer has not enough size for the block serialization
     void serialize(byteBuffer &buffer, size_t &offset) const;
 
     /// @brief Deserialize BlockBody

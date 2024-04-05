@@ -28,7 +28,7 @@ namespace PQB{
     }
 
     bool ExitC::CheckArguments() const{
-        return (args.empty() ? true : false);
+        return args.empty();
     }
 
     void ExitC::Behavior() const{
@@ -59,6 +59,67 @@ namespace PQB{
         std::string receiver = args.at(1);
         std::string ret = model->createTransaction(receiver, amount);
         outputConsole->printToConsole(ret.c_str());
+    }
+
+    bool WhoAmIC::CheckArguments() const{
+        return args.empty();
+    }
+
+    void WhoAmIC::Behavior() const{
+        outputConsole->printToConsole(model->getLocalWalletId().data());
+    }
+
+    bool PrintWalletTxC::CheckArguments() const{
+        return args.empty();
+    }
+
+    void PrintWalletTxC::Behavior() const{
+        std::stringstream ss;
+        model->getDataToPrint(ss, PQB::PQBModel::PrintData::WALLET_TXs);
+        outputConsole->printToConsole(ss.str().c_str());
+    }
+
+    bool PrintBlocksC::CheckArguments() const{
+        return args.empty();
+    }
+
+    void PrintBlocksC::Behavior() const{
+        std::stringstream ss;
+        model->getDataToPrint(ss, PQB::PQBModel::PrintData::BLOCKS);
+        outputConsole->printToConsole(ss.str().c_str());
+    }
+
+    bool PrintBlockTxsC::CheckArguments() const{
+        if (args.size() == ARGS_NUM){
+            return isHexadecimal(args.at(0));
+        }
+        return false;
+    }
+
+    void PrintBlockTxsC::Behavior() const{
+        std::stringstream ss;
+        model->getDataToPrint(ss, PQB::PQBModel::PrintData::BLOCK_TXs, args.at(0));
+        outputConsole->printToConsole(ss.str().c_str());
+    }
+
+    bool PrintAccountsC::CheckArguments() const{
+        return args.empty();
+    }
+
+    void PrintAccountsC::Behavior() const{
+        std::stringstream ss;
+        model->getDataToPrint(ss, PQB::PQBModel::PrintData::ACCOUNTS);
+        outputConsole->printToConsole(ss.str().c_str());
+    }
+
+    bool PrintChainC::CheckArguments() const{
+        return args.empty();
+    }
+
+    void PrintChainC::Behavior() const{
+        std::stringstream ss;
+        model->getDataToPrint(ss, PQB::PQBModel::PrintData::CHAIN);
+        outputConsole->printToConsole(ss.str().c_str());
     }
 
 } // namespace PQB

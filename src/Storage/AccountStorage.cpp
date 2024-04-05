@@ -108,6 +108,25 @@ byte64_t AccountBalanceStorage::getAccountsMerkleRootHash(){
     return ComputeMerkleRoot(std::move(accountHashes));
 }
 
+void AccountBalanceStorage::putAccountDataToStringStream(std::stringstream &ss){
+    leveldb::Iterator *it = db->NewIterator(leveldb::ReadOptions());
+    AccountBalance acc;
+    byteBuffer buffer;
+    for (it->SeekToFirst(); it->Valid(); it->Next()){
+        size_t offset = 0;
+        buffer.resize(it->value().size());
+        std::memcpy(buffer.data(), it->value().data(), buffer.size());
+        acc.deserializeAccountBalance(buffer, offset);
+
+        ss
+        << "Account: " << bytesToHexString((PQB::byte*)it->key().data(), it->key().size()) << std::endl
+        << "Balance: " << acc.balance << std::endl
+        << "Seq.: " << acc.txSequence << std::endl
+        << std::endl << "------------------------------" << std::endl;
+    }
+    delete it;
+}
+
 /*** AccountAddressStorage ***/
 
 AccountAddressStorage::AccountAddressStorage(){

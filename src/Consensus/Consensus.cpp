@@ -76,10 +76,11 @@ namespace PQB{
 
     void ConsensusWrapper::addTransactionToPool(TransactionPtr tx){
         std::lock_guard<std::mutex> lock(consensusMutex_);
-        const auto &it = txPool_.find(tx->IDHash);
+        const auto it = txPool_.find(tx->IDHash);
         if (it == txPool_.end()){
             txPool_.emplace(tx->IDHash, tx);
         }
+        consensusCondition_.notify_one();
     }
 
     void ConsensusWrapper::removeTransactionFromPool(const byte64_t tx_id){
@@ -269,7 +270,7 @@ namespace PQB{
 
     Consensus::Consensus(ConsensusWrapper *wrapper) : wrapper_(wrapper) {
         prevBlock_ = Chain::getGenesisBlock();
-        prevBlockid_ = prevBlock_->getBlockHash();
+        prevBlockid_.setHex(std::string(GENESIS_BLOCK_HASH));
         currBlockId_.SetNull();
         prevRoundTime_ = std::chrono::milliseconds(15000);
         beginConsensus();

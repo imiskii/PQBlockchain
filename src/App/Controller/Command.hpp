@@ -13,6 +13,7 @@
 
 #include <vector>
 #include <string>
+#include <sstream>
 #include "UtilsForPromptCheck.hpp"
 #include "Interface.hpp"
 #include "PQBModel.hpp"
@@ -63,12 +64,57 @@ public:
     void Behavior() const override;
 };
 
+/// @brief Echo command -> print given argument
 class EchoC : public Command{
 public:
     bool CheckArguments() const override;
     void Behavior() const override;
 private:
     static const short ARGS_NUM = 1;
+};
+
+/// @brief Print id/wallet address of this node
+class WhoAmIC : public Command{
+public:
+    bool CheckArguments() const override;
+    void Behavior() const override;
+};
+
+/// @brief Print transactions made with local wallet
+class PrintWalletTxC : public Command{
+public:
+    bool CheckArguments() const override;
+    void Behavior() const override;
+};
+
+/// @brief Print Blocks stored in blocks storage
+class PrintBlocksC : public Command{
+public:
+    bool CheckArguments() const override;
+    void Behavior() const override;
+};
+
+/// @brief Print Transactions of given block
+class PrintBlockTxsC : public Command{
+public:
+    bool CheckArguments() const override;
+    void Behavior() const override;
+private:
+    static const short ARGS_NUM = 1;
+};
+
+/// @brief Print Accounts stored in account storage
+class PrintAccountsC : public Command{
+public:
+    bool CheckArguments() const override;
+    void Behavior() const override;
+};
+
+/// @brief Print tree of blocks from geneseis block to most recent block
+class PrintChainC : public Command{
+public:
+    bool CheckArguments() const override;
+    void Behavior() const override;
 };
 
 
@@ -112,6 +158,7 @@ public:
     }
 };
 
+/// @brief Echo Command Creator
 class EchoCC : public CommandCreator{
 public:
     Command* FactoryMethod() const override{
@@ -122,6 +169,71 @@ public:
     }
 };
 
+/// @brief WhoAmI Comand Creator
+class WhoAmICC : public CommandCreator{
+public:
+    Command* FactoryMethod() const override{
+        return new WhoAmIC();
+    }
+    const char* getCommandHelp() const override{
+        return "whoami: Print local wallet identifier";
+    }
+};
+
+/// @brief PrintWalletTxC Comand Creator
+class PrintWalletTxCC : public CommandCreator{
+public:
+    Command* FactoryMethod() const override{
+        return new PrintWalletTxC();
+    }
+    const char* getCommandHelp() const override{
+        return "walletTxs: Print transactions made with local wallet or received by this wallet";
+    }
+};
+
+/// @brief PrintBlocksC Comand Creator
+class PrintBlocksCC : public CommandCreator{
+public:
+    Command* FactoryMethod() const override{
+        return new PrintBlocksC();
+    }
+    const char* getCommandHelp() const override{
+        return "blocks: Print Blocks stored in blocks storage database";
+    }
+};
+
+/// @brief PrintBlockTxsC Comand Creator
+class PrintBlockTxsCC : public CommandCreator{
+public:
+    Command* FactoryMethod() const override{
+        return new PrintBlockTxsC();
+    }
+    const char* getCommandHelp() const override{
+        return "blockTxs: Print Transactions in given block\n\tblockTxs <block ID>";
+    }
+};
+
+/// @brief PrintAccountsC Comand Creator
+class PrintAccountsCC : public CommandCreator{
+public:
+    Command* FactoryMethod() const override{
+        return new PrintAccountsC();
+    }
+    const char* getCommandHelp() const override{
+        return "accs: Print Accounts stored in account storage database";
+    }
+};
+
+/// @brief PrintChainC Comand Creator
+class PrintChainCC : public CommandCreator{
+public:
+    Command* FactoryMethod() const override{
+        return new PrintChainC();
+    }
+    const char* getCommandHelp() const override{
+        return "chain: Print tree of blocks from geneseis block to most recent block";
+    }
+};
 
     
 } // namespace PQB

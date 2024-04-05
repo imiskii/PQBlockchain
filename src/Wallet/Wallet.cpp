@@ -126,15 +126,14 @@ namespace PQB{
             HashMan::SHA512_hash(&walletID, publicKey.data(), publicKey.size());
     }
 
-    std::string Wallet::outputWalletTxRecords(){
-        std::ostringstream oss;
-        oss 
-            << std::setw(33) << "Transaction ID"
-            << std::setw(33) << "Receiver wallet ID"
-            << std::setw(21) << "Amount"
-            << std::setw(21) << "Tx seq."
-            << std::setw(21) << "Timestamp"
-            << std::setw(11) << "status"
+    void Wallet::outputWalletTxRecords(std::stringstream &outStringStream){
+        outStringStream 
+            << std::setw(33) << std::left << "Transaction ID"
+            << std::setw(33) << std::left << "Receiver wallet ID"
+            << std::setw(21) << std::left << "Amount"
+            << std::setw(21) << std::left << "Tx seq."
+            << std::setw(21) << std::left << "Timestamp"
+            << std::setw(11) << std::left << "status"
             << std::endl;
 
         for (const auto &tx : txRecords){
@@ -144,7 +143,7 @@ namespace PQB{
             char buffer[80];
             std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", tm);
 
-            oss 
+            outStringStream 
             << std::setw(33) << tx.first.substr(0, 32)
             << std::setw(33) << tx.second.first.receiverWalletAddress.getHex().substr(0, 32)
             << std::setw(21) << tx.second.first.cashAmount
@@ -153,7 +152,6 @@ namespace PQB{
             << std::setw(11) << TxStateToString(tx.second.second)
             << std::endl;
         }
-        return oss.str();
     }
 
 } // namespace PQB

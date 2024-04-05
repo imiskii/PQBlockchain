@@ -38,6 +38,9 @@ namespace PQB{
     constexpr uint32_t MSG_VERSION = 1;
     /// @brief Current transaction version
     constexpr uint32_t TX_VERSION = 1;
+
+    /// ID/hash of the genesis block
+    constexpr std::string_view GENESIS_BLOCK_HASH = "B40FA957FE22271545BF8082FC798C8D0E3C9788DC18793755B39035CD5B142DFC04C316C3256C48D0EDCFEE62779B5C74A0BFA2BF4F680BFD2C9500FFA118ED";
 }
 
 /* END OF FILE */

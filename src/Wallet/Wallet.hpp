@@ -134,8 +134,9 @@ public:
     /// @brief Generate new pair of keys for making digital signatures
     void genNewKeys();
 
-    /// @brief Serialize and return printable string of transactions made with this wallet
-    std::string outputWalletTxRecords();
+    /// @brief Serialize transactions made with this wallet and put them into `outStringStream` stream
+    /// @param outStringStream [out] string stream where to put serialized wallet transactions
+    void outputWalletTxRecords(std::stringstream &outStringStream);
 };
 
 /// @brief Comparator to order transactions by time they was made

@@ -55,6 +55,24 @@ public:
      */
     std::string createTransaction(std::string &receiver, PQB::cash amount);
 
+    /// @brief Get hexadecimal representation of local wallet identifier
+    std::string_view getLocalWalletId();
+
+    /// @brief Types of data that can be printed (used with `getDataToPrint()` method)
+    enum class PrintData{
+        WALLET_TXs,
+        BLOCKS,
+        BLOCK_TXs,
+        ACCOUNTS,
+        CHAIN
+    };
+
+    /// @brief Get data for printing
+    /// @param ss [out] string stream where to put the data
+    /// @param whatData type of data to get
+    /// @param id if there are some specific data then this will be identifier of that data 
+    void getDataToPrint(std::stringstream &ss, PrintData whatData, std::string id = "");
+
 };
 
 

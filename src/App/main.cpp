@@ -80,7 +80,10 @@ int main(int argc, char *argv[]){
     PQB::Console console;
     PQB::Controller controller(&console, &model);
     console.setCommandListener(&controller);
+
+    PQB_LOG_INFO("MAIN", "Application started");
     console.openConsol();
+    PQB_LOG_INFO("MAIN", "Aplication closed");
 
     return 0;
 }

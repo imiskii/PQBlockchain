@@ -87,7 +87,58 @@ bool BlocksStorage::setBlock(const byte64_t &blockHash, const byteBuffer &buffer
     }
     PQB_LOG_TRACE("BLOCK STORAGE", "Block {} added to database", shortStr(blockHash.getHex()));
     return true;
+}
 
+void BlocksStorage::putBlockHeadersDataToStringStream(std::stringstream &ss){
+    leveldb::Iterator *it = db->NewIterator(leveldb::ReadOptions());
+    Block block;
+    byteBuffer buffer;
+    for (it->SeekToFirst(); it->Valid(); it->Next()){
+        size_t offset = 0;
+        buffer.resize(it->value().size());
+        std::memcpy(buffer.data(), it->value().data(), buffer.size());
+        block.deserialize(buffer, offset);
+        
+        
+
+        ss
+        << "Block: " << bytesToHexString((PQB::byte*)it->key().data(), it->key().size()) << std::endl 
+        << "Version: " << block.version << std::endl
+        << "Seq.: " << block.sequence << std::endl
+        << "Size: " << block.size << std::endl
+        << "Tx count: " << block.transactionCount << std::endl
+        << "Parent: " << block.previousBlockHash.getHex() << std::endl
+        << "Tx hash: " << block.transactionsMerkleRootHash.getHex() << std::endl
+        << "Acc hash: " << block.accountBalanceMerkleRootHash.getHex() << std::endl 
+        << std::endl << "------------------------------" << std::endl;
+    }
+    delete it;
+}
+
+void BlocksStorage::putBlockTxDataToStringStream(std::string &block_id, std::stringstream &ss){
+    byte64_t bid;
+    bid.setHex(block_id);
+    Block *block;
+    block = getBlock(bid);
+
+    for (const auto &tx : block->txSet){
+        using clock = std::chrono::system_clock;
+        std::time_t time = clock::to_time_t(clock::from_time_t(tx->timestamp));
+        std::tm* tm = std::localtime(&time);
+        char buffer[80];
+        std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", tm);
+
+        ss
+        << "ID: " << tx->IDHash.getHex() << "" << std::endl
+        << "Seq.: " << tx->sequenceNumber << std::endl
+        << "Timestamp: " << buffer << std::endl
+        << "Amount: " << tx->cashAmount << std::endl
+        << "Send.: " << tx->senderWalletAddress.getHex() << std::endl
+        << "Recv.: " << tx->receiverWalletAddress.getHex() << std::endl
+        << std::endl << "------------------------------" << std::endl;
+    }
+
+    delete block;
 }
 
 } // namespace PQB

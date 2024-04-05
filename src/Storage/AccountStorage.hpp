@@ -15,6 +15,7 @@
 #include <set>
 #include <unordered_map>
 #include <cstring>
+#include <sstream>
 #include "leveldb/db.h"
 #include "leveldb/slice.h"
 #include "leveldb/write_batch.h"
@@ -87,6 +88,13 @@ public:
      * @return byte64_t root hash of account balances
      */
     byte64_t getAccountsMerkleRootHash();
+
+    /**
+     * @brief Put data of all account in the database to the string stream
+     * 
+     * @param ss [out] string stream
+     */
+    void putAccountDataToStringStream(std::stringstream &ss);
 
 protected:
     leveldb::DB* db; ///< Instance of LevelDB database for Accounts

@@ -70,11 +70,40 @@ namespace PQB{
         it->second.block->accountBalanceMerkleRootHash = accHash;
     }
 
+    void Chain::putChainDataToStringStream(std::stringstream &ss){
+        byte64_t genesisId;
+        genesisId.setHex(std::string(GENESIS_BLOCK_HASH));
+        const auto it = ch.find(genesisId);
+        if (it != ch.end()){
+            ss << "Genesis Block" << std::endl;
+            ss << " | " << std::endl;
+            for (const auto &child : it->second.childs){
+                ss << " | ->" << child->id.getHex() << std::endl;
+            }
+            ss << " | " << std::endl;
+
+            BlockNode *node = it->second.validChild;
+            while (node){
+                ss << " V " << std::endl;
+                ss << node->id.getHex() << std::endl;
+                ss << " | " << std::endl;
+                for (const auto &child : node->childs){
+                    ss << " | ->" << child->id.getHex() << std::endl;
+                }
+                ss << " | " << std::endl;
+                node = node->validChild;
+            }
+            ss << std::endl;
+        }
+        
+    }
+
     std::pair<byte64_t&, BlockHeaderPtr> Chain::getPreferredBlock(){
         return getPreferredBlock(&validBlock);
     }
 
-    std::pair<byte64_t&, BlockHeaderPtr> Chain::getPreferredBlock(BlockNode *n){
+    std::pair<byte64_t &, BlockHeaderPtr> Chain::getPreferredBlock(BlockNode *n)
+    {
         if (n->childs.empty()){
             return {n->id, n->block};
         } else {

@@ -32,6 +32,8 @@ namespace PQB{
 
     extern const uint32_t MSG_VERSION;
     extern const uint32_t TX_VERSION;
+
+    extern const std::string_view GENESIS_BLOCK_HASH;
 }
 
 

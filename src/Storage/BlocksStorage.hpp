@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <sstream>
 #include "leveldb/db.h"
 #include "leveldb/slice.h"
 #include "leveldb/cache.h"
@@ -72,6 +73,21 @@ public:
      * @return false if operation fails
      */
     bool setBlock(const byte64_t &blockHash, const byteBuffer &buffer);
+
+    /**
+     * @brief Put data of all blocks in the database to the string stream `ss`
+     * 
+     * @param ss [out] string stream
+     */
+    void putBlockHeadersDataToStringStream(std::stringstream &ss);
+
+    /**
+     * @brief Put transaction data of the block with id `block_id` to the string stream `ss`
+     * 
+     * @param block_id identifier of the block
+     * @param ss [out] string stream
+     */
+    void putBlockTxDataToStringStream(std::string &block_id, std::stringstream &ss);
 
 private:
     leveldb::Options databaseOptions;

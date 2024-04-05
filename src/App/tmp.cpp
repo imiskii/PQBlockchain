@@ -4,6 +4,7 @@
 #include <memory>
 #include <unordered_map>
 #include "Consensus.hpp"
+#include "Chain.hpp"
 #include "Transaction.hpp"
 #include "Block.hpp"
 #include "Blob.hpp"
@@ -129,7 +130,6 @@ int main(int argc, char *argv[]){
     b.serialize(buffer, offset);
 
     bStorage.setBlock(bHash, buffer);
-    PQB::Block *bb = bStorage.getBlock(bHash);
     
     std::cout << "Block 1 - " << "size: " << b.size << std::endl;
     std::cout << "Block 1 - " << "tx count: " << b.transactionCount << std::endl;
@@ -137,49 +137,49 @@ int main(int argc, char *argv[]){
     std::cout << "Block 1 - " << "account hash: " << b.accountBalanceMerkleRootHash.getHex() << std::endl;
     std::cout << "Block 1 - " << "hash: " << bHash.getHex() << std::endl;
 
-    byte64_t bbHash = bb->getBlockHash();
+    std::cout << std::endl;
 
-    std::cout << "Block 2 - " << "size: " << bb->size << std::endl;
-    std::cout << "Block 2 - " << "tx count: " << bb->transactionCount << std::endl;
-    std::cout << "Block 2 - " << "tx hash: " << bb->transactionsMerkleRootHash.getHex() << std::endl;
-    std::cout << "Block 2 - " << "account hash: " << bb->accountBalanceMerkleRootHash.getHex() << std::endl;
-    std::cout << "Block 2 - " << "hash: " << bbHash.getHex() << std::endl;
+    std::stringstream ss;
+    bStorage.putBlockHeadersDataToStringStream(ss);
+    std::cout << ss.str();
+    ss.str("");
+    ss.clear();
 
-    ad1.setNull();
-    ad2.setNull();
-    accStorage.getAccount(wallet->getWalletID(), ad1);
-    accStorage.getAccount(hash2, ad2);
+    std::cout << std::endl;
 
-    std::cout << "Account 1 - " << "balance: " << ad1.balance << std::endl;
-    std::cout << "Account 1 - " << "seq. num.: " << ad1.txSequence << std::endl;
-    std::cout << "Account 1 - " << "Address: " << ad1.addresses.at(0) << std::endl << std::endl;
-
-    std::cout << "Account 2 - " << "balance: " << ad2.balance << std::endl;
-    std::cout << "Account 2 - " << "seq. num.: " << ad2.txSequence << std::endl;
-    std::cout << "Account 2 - " << "Address: " << ad2.addresses.at(0) << std::endl << std::endl;
-
-    for (const auto &addr : ad1.addresses){
-        std::cout << "Account 1 - " << "Address: " << addr << std::endl;
-    }
+    accStorage.blncDB->putAccountDataToStringStream(ss);
+    std::cout << ss.str();
+    ss.str("");
+    ss.clear();
     
     std::cout << std::endl;
 
-    for (const auto &tx : bb->txSet){
-        if (tx->verify(wallet->getPublicKey()))
-            std::cout <<  "Transcation " << tx->IDHash.getHex() << " is valid." << std::endl;
-        else
-            std::cout << "Transcation " << tx->IDHash.getHex() << " is not valid." << std::endl;
-    }
+    std::string bHashStr = bHash.getHex();
+    bStorage.putBlockTxDataToStringStream(bHashStr, ss);
+    std::cout << ss.str();
+    ss.str("");
+    ss.clear();
+
+    std::cout << std::endl;
 
     byte64_t accountHash = accStorage.blncDB->getAccountsMerkleRootHash();
     std::cout << std::endl << "Account hash for control " << accountHash.getHex() << std::endl << std::endl;
 
+    std::cout << std::endl;
 
-    std::cout << wallet->outputWalletTxRecords() << std::endl;    
+    wallet->outputWalletTxRecords(ss);
+    std::cout << ss.str() << std::endl;
+    ss.str("");
+    ss.clear();
+
     wallet->saveConfigurationToFile();
-
-    delete bb;
     delete wallet;
+
+    // genesis block
+    PQB::BlockPtr genesis = std::make_shared<PQB::Block>();
+    genesis = PQB::Chain::getGenesisBlock();
+    byte64_t genesisHash = genesis->getBlockHash();
+    std::cout << "Genesis block hash:" << std::endl << genesisHash.getHex() << std::endl; 
     
     return 0;
 }
