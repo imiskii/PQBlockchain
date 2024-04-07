@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <memory>
+#include <map>
 #include <unordered_map>
 #include "Consensus.hpp"
 #include "Chain.hpp"
@@ -23,7 +24,6 @@ int main(int argc, char *argv[]){
 
     // ArgParser &a = ArgParser::GetInstance(argc, argv);
     // args_t parsedArgs = a.getArguments();
-
 
     PQB::Signer::GetInstance("falcon1024");
     PQB::Wallet *wallet;

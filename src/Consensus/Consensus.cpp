@@ -98,7 +98,7 @@ namespace PQB{
         consensus_->gotTxSet(prop);
     }
 
-    std::pair<byte64_t&, BlockHeaderPtr> ConsensusWrapper::getPreferred(){
+    std::pair<byte64_t&, BlockHeaderPtr&> ConsensusWrapper::getPreferred(){
         return chain_->getPreferredBlock();
     }
 
@@ -132,25 +132,26 @@ namespace PQB{
 
     bool ConsensusWrapper::addBlockProposalToChain(BlockProposalPtr &blockProp, byte64_t &currBlockId){
         BlockHeaderPtr blockhdr = std::make_shared<BlockHeader>();
-        blockhdr->accountBalanceMerkleRootHash = std::move(blockProp->proposedBlockHeader.accountBalanceMerkleRootHash);
-        blockhdr->previousBlockHash = std::move(blockProp->proposedBlockHeader.previousBlockHash);
-        blockhdr->sequence = std::move(blockProp->proposedBlockHeader.sequence);
-        blockhdr->size = std::move(blockProp->proposedBlockHeader.size);
-        blockhdr->transactionsMerkleRootHash = std::move(blockProp->proposedBlockHeader.transactionsMerkleRootHash);
-        blockhdr->version = std::move(blockProp->proposedBlockHeader.version);
-        chain_->insert(blockProp->issuer.getHex(), blockhdr);
+        blockhdr->accountBalanceMerkleRootHash.SetNull();
+        blockhdr->previousBlockHash = blockProp->proposedBlockHeader.previousBlockHash;
+        blockhdr->sequence = blockProp->proposedBlockHeader.sequence;
+        blockhdr->size = blockProp->proposedBlockHeader.size;
+        blockhdr->transactionsMerkleRootHash = blockProp->proposedBlockHeader.transactionsMerkleRootHash;
+        blockhdr->version = blockProp->proposedBlockHeader.version;
+        chain_->insert(blockProp->issuer.getHex(), std::move(blockhdr));
         return chain_->updateValidBlock(currBlockId);
     }
 
-    void ConsensusWrapper::addBlockHeaderToChain(BlockPtr &block){
+    bool ConsensusWrapper::addBlockHeaderToChain(BlockPtr &block, byte64_t &currBlockId){
         BlockHeaderPtr blockhdr = std::make_shared<BlockHeader>();
-        blockhdr->accountBalanceMerkleRootHash = block->accountBalanceMerkleRootHash;
+        blockhdr->accountBalanceMerkleRootHash.SetNull();
         blockhdr->previousBlockHash = block->previousBlockHash;
         blockhdr->sequence = block->sequence;
         blockhdr->size = block->size;
         blockhdr->transactionsMerkleRootHash = block->transactionsMerkleRootHash;
         blockhdr->version = block->version;
-        chain_->insert(wallet_->getWalletID().getHex(), blockhdr);
+        chain_->insert(wallet_->getWalletID().getHex(), std::move(blockhdr), true);
+        return chain_->updateValidBlock(currBlockId);
     }
 
     void ConsensusWrapper::countAccountDifferencesByTxSet(AccountBalanceStorage *accBalanceStorage, Wallet *wallet, TransactionSet &txSet, std::unordered_map<std::string, AccountBalanceStorage::AccountDifference> &accDiffs){
@@ -270,6 +271,7 @@ namespace PQB{
 
     Consensus::Consensus(ConsensusWrapper *wrapper) : wrapper_(wrapper) {
         prevBlock_ = Chain::getGenesisBlock();
+        currBlock_ = std::make_shared<Block>();
         prevBlockid_.setHex(std::string(GENESIS_BLOCK_HASH));
         currBlockId_.SetNull();
         prevRoundTime_ = std::chrono::milliseconds(15000);
@@ -294,31 +296,34 @@ namespace PQB{
         auto [id, blockHdr] = wrapper_->getPreferred();
         if (id != prevBlockid_){
             // copy header to prevBlock_
-            *prevBlock_ = *blockHdr;
+            prevBlock_->setNull();
+            prevBlock_->setBlockHeader(blockHdr.get());
             prevBlockid_ = id;
             beginConsensus();
         }
+
+        PQB_LOG_TRACE("CONSENSUS", "Preferred block is: {} with sequence {}", shortStr(id.getHex()), prevBlock_->sequence);
 
         if (phase_ == ConsensusPhase::OPEN){
             if ((Clock::now() - openTime_) > (prevRoundTime_ / 2)){
                 phase_ = ConsensusPhase::ESTABLISH;
                 closeBlock();
-            } else if (phase_ == ConsensusPhase::ESTABLISH){
-                result_.roundTime = Clock::now() - closeTime_;
-                // roundTime_ / max(prevRoundTime_, 5s)
-                converge_ = result_.roundTime / (Ms(5000) > prevRoundTime_ ? Ms(5000) : prevRoundTime_);
-                updateProposals();
-                if (haveConsensus()){
-                    phase_ = ConsensusPhase::ACCEPTED;
-                    onAccept();
-                }
+            }
+        } else if (phase_ == ConsensusPhase::ESTABLISH){
+            result_.roundTime = Clock::now() - closeTime_;
+            // roundTime_ / max(prevRoundTime_, 5s)
+            converge_ = result_.roundTime / (Ms(5000) > prevRoundTime_ ? Ms(5000) : prevRoundTime_);
+            updateProposals();
+            if (haveConsensus()){
+                phase_ = ConsensusPhase::ACCEPTED;
+                onAccept();
             }
         }
     }
 
     void Consensus::closeBlock(){
         currBlock_->setNull();
-        currBlock_->sequence = prevBlock_->sequence + 1;
+        currBlock_->sequence = (prevBlock_->sequence + 1);
         wrapper_->getCurrentTransactionSet(result_.txns);
         // create proposal
         const auto time = std::chrono::system_clock::now();
@@ -329,11 +334,19 @@ namespace PQB{
         result_.txProposal.TxSetId = ComputeTxSetMerkleRoot(result_.txns);
         closeTime_ = Clock::now();
         wrapper_->share(result_.txProposal);
+        result_.compares.clear();
         result_.disputes.clear();
-        for (auto &set : acquiredSets_){
-            createDisputes(set.second);
+        CTxSet newCTxSet = {.set=result_.txns, .setId=result_.txProposal.TxSetId, .time=result_.txProposal.time};
+        acquiredSets_.emplace(result_.txProposal.TxSetId.getHex(), std::move(newCTxSet));
+        for (const auto &pit :currPeerProposals_){
+            const auto &pos = pit.second.txSetId;
+            const auto &it = acquiredSets_.find(pos);
+            if (it != acquiredSets_.end()){
+                createDisputes(it->second);
+            }
         }
-        PQB_LOG_TRACE("CONSENSUS", "Block closed with transaction set {}", shortStr(result_.txProposal.TxSetId.getHex()));
+        PQB_LOG_TRACE("CONSENSUS", "Block closed with transaction set {} and sequence {}", 
+                    shortStr(result_.txProposal.TxSetId.getHex()), currBlock_->sequence);
     }
 
     void Consensus::gotTxSet(TxSetProposalPtr &prop){
@@ -359,15 +372,28 @@ namespace PQB{
             currPeerProposals_.emplace(peerId, std::move(newPos));
         }
 
+        PQB_LOG_TRACE("CONSENSUS", "Received transaction set {} from peer {}", shortStr(id), shortStr(peerId));
+
+        CTxSet newCTxSet;
         const auto it = acquiredSets_.find(id);
-        if (it != acquiredSets_.end()){
+        if (it != acquiredSets_.end()){ // set is already processed
             it->second.time = std::move(prop->time);
+            return;
         } else {
-            CTxSet newCTxSet = {.set=std::move(prop->txSet.txSet), .time=std::move(prop->time)};
-            acquiredSets_.emplace(id, std::move(newCTxSet));
-        
+            newCTxSet = {.set=std::move(prop->txSet.txSet), .setId=std::move(prop->TxSetId), .time=std::move(prop->time)};
+            acquiredSets_.emplace(id, newCTxSet);
         }  
-        PQB_LOG_TRACE("CONSENSUS", "Received transaction set {} from peer {}", shortStr(id), shortStr(peerId));   
+
+        if (!result_.isSet()){
+            PQB_LOG_TRACE("CONSENSUS", "Not creating disputes: no position yet");
+        } else {
+            for (const auto &[nodeId, peerPos] : currPeerProposals_){
+                if (peerPos.txSetId == id){
+                    updateDisputes(nodeId, newCTxSet);
+                }
+            }
+        }
+
     }
 
     void Consensus::updateProposals(){
@@ -376,7 +402,7 @@ namespace PQB{
         while (it != currPeerProposals_.end()){
             // if proposal is older then 20 seconds or more then it is stale proposal and it should be removed
             if ((cTime - it->second.time) >= 20){
-                PQB_LOG_TRACE("CONSENSUS", "Removing stale proposal from peer {}", it->first);
+                PQB_LOG_TRACE("CONSENSUS", "Removing stale proposal from peer {}", shortStr(it->first));
                 for (auto &dt : result_.disputes){
                     dt.second.unVote(it->first);
                 }
@@ -388,7 +414,7 @@ namespace PQB{
         auto wit = acquiredSets_.begin();
         while (wit != acquiredSets_.end()){
             if ((cTime - wit->second.time) >= 20){
-                PQB_LOG_TRACE("CONSENSUS", "Removing stale TxSet {}", wit->first);
+                PQB_LOG_TRACE("CONSENSUS", "Removing stale TxSet {}", shortStr(wit->first));
                 wit = acquiredSets_.erase(wit);
             } else {
                 ++wit;
@@ -415,9 +441,14 @@ namespace PQB{
             result_.txProposal.txSet.txSet = result_.txns;
             result_.txProposal.TxSetId = ComputeTxSetMerkleRoot(result_.txns);
             wrapper_->share(result_.txProposal);
-            result_.disputes.clear();
-            for (auto &set : acquiredSets_){
-                createDisputes(set.second);
+
+            CTxSet newCTxSet = {.set=result_.txns, .setId=result_.txProposal.TxSetId, .time=result_.txProposal.time};
+            if (acquiredSets_.emplace(result_.txProposal.TxSetId.getHex(), newCTxSet).second){
+                for (const auto &[nodeId, peerPos] : currPeerProposals_){
+                    if (peerPos.txSetId == result_.txProposal.TxSetId.getHex()){
+                        updateDisputes(nodeId, newCTxSet);
+                    }
+                }
             }
             PQB_LOG_TRACE("CONSENSUS", "Proposed transaction set changed to {}", shortStr(result_.txProposal.TxSetId.getHex()));
         }
@@ -445,31 +476,50 @@ namespace PQB{
         currBlock_->transactionsMerkleRootHash = result_.txProposal.TxSetId;
         currBlock_->size = currBlock_->getSize();
         currBlockId_ = currBlock_->getBlockHash();
-        wrapper_->addBlockHeaderToChain(currBlock_);
         // Create proposal on this block
         BlockProposal bProp;
         bProp.blockId = currBlockId_;
         bProp.proposedBlockHeader = currBlock_->getBlockHeader();
         wrapper_->share(bProp);
         // Assign prevBlock and start new round
-        prevBlock_ = currBlock_;
+        *prevBlock_ = *currBlock_;
         prevBlockid_ = currBlockId_;
         prevRoundTime_ = result_.roundTime;
+        PQB_LOG_TRACE("CONSENSUS", "New accepted block {}", shortStr(currBlockId_.getHex()));
+        // Add block to chain, if new valid block is set execute it
+        if (wrapper_->addBlockHeaderToChain(currBlock_, currBlockId_)){
+            wrapper_->executeBlock(currBlock_);
+            currBlock_->setNull(); // to save memory
+        }
         beginConsensus();
     }
 
     void Consensus::peerProposal(BlockProposalPtr &prop){
+        PQB_LOG_TRACE("CONSENSUS", "Received block proposal with transaction set {} and block sequence {} from peer {}", 
+                    shortStr(prop->proposedBlockHeader.transactionsMerkleRootHash.getHex()), prop->proposedBlockHeader.sequence, shortStr(prop->issuer.getHex()));
         if (prop->proposedBlockHeader.sequence == currBlock_->sequence){
             if (wrapper_->addBlockProposalToChain(prop, currBlockId_)){
                 wrapper_->executeBlock(currBlock_);
-                currBlock_->txSet.clear(); // to save memory
+                currBlock_->setNull(); // to save memory
             }
+        } else {
+            PQB_LOG_TRACE("CONSENSUS", "Received block sequence is {}, but current block sequence for this node is {}",
+                        prop->proposedBlockHeader.sequence, currBlock_->sequence);
         }
-        PQB_LOG_TRACE("CONSENSUS", "Received block proposal with transaction set {} from peer {}", 
-                    shortStr(prop->proposedBlockHeader.transactionsMerkleRootHash.getHex()), shortStr(prop->issuer.getHex()));
     }
 
     void Consensus::createDisputes(CTxSet &set){
+        
+        // Only create disputes if this is a new set
+        if (!result_.compares.emplace(set.setId).second){
+            return;
+        }
+
+        // Nothing to dispute if we agree
+        if (set.setId == result_.txProposal.TxSetId){
+            return;
+        }
+
         TransactionSet diff;
         std::set_symmetric_difference(result_.txns.begin(), result_.txns.end(), set.set.begin(), set.set.end(), std::inserter(diff, diff.end()));
         for (auto &tx : diff){
@@ -495,6 +545,17 @@ namespace PQB{
             }
             result_.disputes.emplace(txId, std::move(dtx));
             PQB_LOG_TRACE("CONSENSUS", "Found disputed transaction {}", shortStr(txId));
+        }
+    }
+
+    void Consensus::updateDisputes(const PeerId &node, CTxSet &set){
+        if (result_.compares.find(set.setId) == result_.compares.end()){
+            createDisputes(set);
+        }
+
+        for (auto &it : result_.disputes){
+            auto &d = it.second;
+            d.setVote(node, set.exists(d.getTx()));
         }
     }
 

@@ -16,8 +16,8 @@
 namespace PQB
 {
 
-    ConnectionManager::ConnectionManager(MessageProcessor *msgProcessor, AccountAddressStorage *addressStorage, std::string &walletID, NodeType type)
-    : messsagProcessor(msgProcessor), addrStorage(addressStorage), localWalletID(walletID), localNodeType(type){
+    ConnectionManager::ConnectionManager(MessageProcessor *msgProcessor, AccountAddressStorage *addressStorage, Wallet *wallet, NodeType type)
+    : messsagProcessor(msgProcessor), addrStorage(addressStorage), wallet_(wallet), localNodeType(type){
         server = new Server();
         runServer();
         connectionManagerRunFlag = true;
@@ -76,7 +76,7 @@ namespace PQB
             // To decide deterministically local wallet ID (local user ID) and connected peer ID are alphabetically compared.
             // This problem may occure if when two peers initialize connection with each other at the same time, so
             // they send VERSION message to each other and they are both waiting for ACK message.
-            if (localWalletID > peerID){ // If local wallet ID > peer ID, delete new connection and keep existing connection
+            if (wallet_->getWalletID().getHex() > peerID){ // If local wallet ID > peer ID, delete new connection and keep existing connection
                 deleteConnection(connectionID);
                 return;
             } else { // Delete existing connection and keep this connection
@@ -86,6 +86,13 @@ namespace PQB
                 deleteConnection(exConn->getConnectionSocketFD());
             }
         }
+        // Check for UNL connections
+        for (const auto &peer : wallet_->getUNL()){
+            if (peer == peerID){
+                thisConn->isUNL = true;
+            }
+        }
+
         PQB_LOG_TRACE("CONNECTION MANAGER", "Connection {} renamed to {}", shortStr(thisConn->connID), shortStr(peerID));
         updatePeerIdOfConnectionInConnectionPool(connectionID, thisConn->connID, peerID);
         thisConn->isConfirmed = true;
@@ -118,9 +125,7 @@ namespace PQB
         connection->isConfirmed = true;
         // Send VERSION message
         VersionMessage *msg = new VersionMessage(VersionMessage::getPayloadSize());
-        byte64_t localID;
-        localID.setHex(localWalletID);
-        VersionMessage::version_msg_t mData = {.version=MSG_VERSION, .nodeType=localNodeType, .peerID=localID};
+        VersionMessage::version_msg_t mData = {.version=MSG_VERSION, .nodeType=localNodeType, .peerID=wallet_->getWalletID()};
         msg->serialize(&mData);
         MessageRequest_t req = {.type=MessageRequestType::ONE, .connectionID=sock->getSocketFD(), .peerID=peerID, .message=msg};
         addMessageRequest(req);
@@ -290,8 +295,13 @@ namespace PQB
                 hints.ai_flags |= AI_NUMERICHOST;
             }
             // getaddrinfo()
-            if (getaddrinfo(address.c_str(), std::to_string(PQB_SERVER_PORT).c_str(), &hints, &result) != 0)
+            if (getaddrinfo(address.c_str(), std::to_string(PQB_SERVER_PORT).c_str(), &hints, &result) != 0){
+                if (result != nullptr){
+                    freeaddrinfo(result);
+                    result = nullptr;
+                }
                 continue;
+            }
             if (result == nullptr)
                 continue;
             // Get socket descriptor and create Sock object
@@ -310,6 +320,8 @@ namespace PQB
                 delete sock;
                 continue;
             }
+            freeaddrinfo(result);
+            result = nullptr;
             return sock;
         }
         return nullptr;
@@ -443,6 +455,8 @@ namespace PQB
 
     void MessageProcessor::processMessage(int connectionID, std::string &peerID, bool isUNL, Message *message){
         MessageType msgType = message->getType(); // save message type for log
+        PQB_LOG_TRACE("MESSAGE PROCESSOR", "Message of type {} from peer {} was received for processing", 
+                    Message::messageTypeToString(msgType), shortStr(peerID));
         if (connMng != nullptr){
             message_item_t msgi = {.connection_id=connectionID, .peer_id=peerID, .isUNL=isUNL, .msg=message};
             if (!earlyProcessing(msgi)){

@@ -74,7 +74,8 @@ namespace PQB{
         serializeField(buffer, offset, signatureSize);
         std::memcpy(buffer.data() + offset, signature.data(), signatureSize);
         offset += signatureSize;
-        proposedBlockHeader.serialize(buffer, offset);
+        /// Skip checks because there is missing account hash -> it will be filled after the consensus
+        proposedBlockHeader.serialize(buffer, offset, true);
     }
 
     void BlockProposal::deserialize(const byteBuffer &buffer, size_t &offset){

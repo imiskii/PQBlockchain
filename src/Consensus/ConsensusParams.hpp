@@ -76,6 +76,7 @@ struct CProposal{
 /// @brief Transaction set for consensus
 struct CTxSet{
     TransactionSet set;
+    byte64_t setId;
     timestamp time;    ///< last time when this set was proposed
 
     /// @brief Check if given transaction exists in this set
@@ -87,6 +88,7 @@ class ConsensusResult{
 public:
 
     TransactionSet txns; ///< set of transactions consensus agrees on
+    std::set<byte64_t> compares;
     TxSetProposal txProposal;
     std::unordered_map<std::string, DisputeTransaction> disputes; ///< collection of disputed transactios
     std::chrono::duration<double, std::milli> roundTime; ///< duration of the establish phase
@@ -98,9 +100,14 @@ public:
 
     void reset(){
         txns.clear();
+        compares.clear();
         txProposal.setNull();
         disputes.clear();
         roundTime = std::chrono::milliseconds(0);
+    }
+
+    bool isSet(){
+        return (!txns.empty() && !txProposal.TxSetId.IsNull());
     }
 
 };

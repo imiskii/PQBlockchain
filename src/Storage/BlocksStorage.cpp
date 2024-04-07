@@ -70,6 +70,7 @@ bool BlocksStorage::getRawBlock(const byte64_t &blockHash, byteBuffer &buffer){
 
 bool BlocksStorage::setBlock(const Block *block){
     byteBuffer buffer;
+    buffer.resize(block->getSize());
     size_t offset = 0;
     block->serialize(buffer, offset);
     byte64_t blockHash = block->getBlockHash();

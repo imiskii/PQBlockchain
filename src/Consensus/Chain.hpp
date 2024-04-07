@@ -72,8 +72,9 @@ public:
      * 
      * @param issuer Issuer of the block
      * @param block Block header to put into the chain
+     * @param isLocal flag telling if block is inserted by local node. I this case the count on tip-support does not increase
      */
-    void insert(std::string issuer, BlockHeaderPtr block);
+    void insert(std::string issuer, BlockHeaderPtr block, bool isLocal = false);
 
     /// @brief If conditions are met update valid block to block with given `block_id`. 
     /// If there is not such a block do nothing and return false.
@@ -87,7 +88,7 @@ public:
     void assignAccountHashToValidBlock(byte64_t &accHash);
 
     /// @brief Get ID and header of Block on which majority of UNL nodes are woking on
-    std::pair<byte64_t&, BlockHeaderPtr> getPreferredBlock();
+    std::pair<byte64_t&, BlockHeaderPtr&> getPreferredBlock();
 
     static BlockPtr getGenesisBlock(){
         BlockPtr genesis = std::make_shared<Block>();
@@ -105,7 +106,7 @@ public:
 private:
 
     /// @brief Get preferred block of given block `n` with its ID
-    std::pair<byte64_t&, BlockHeaderPtr> getPreferredBlock(BlockNode *n);
+    std::pair<byte64_t&, BlockHeaderPtr&> getPreferredBlock(BlockNode *n);
 
     /// @brief return hardcoded genesis block
     static BlockNode getGenesisBlockNode(){
@@ -113,6 +114,7 @@ private:
 
         BlockNode genesisRef;
         genesisRef.id = genesis->getBlockHash();
+        genesisRef.block = genesis;
         genesisRef.parent = nullptr;
         genesisRef.validChild = nullptr;
         genesisRef.childs.clear();

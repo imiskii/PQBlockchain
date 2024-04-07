@@ -86,6 +86,9 @@ namespace PQB{
         if (newBalance < 0){
             return nullptr;
         }
+        
+        txSequenceNumber++;
+        balance -= amount;
 
         const auto time = std::chrono::system_clock::now();
         TransactionPtr tx = std::make_shared<PQB::Transaction>();
@@ -98,8 +101,6 @@ namespace PQB{
         tx->setHash();
         tx->sign(secretKey);
 
-        txSequenceNumber++;
-        balance -= amount;
         std::pair<TransactionData, TxState> p = std::make_pair(tx->getTransactionData(), TxState::WAITING);
         txRecords.emplace(tx->IDHash.getHex(), p);
         return tx;
@@ -107,8 +108,12 @@ namespace PQB{
 
     void Wallet::updateTransaction(std::string transactionID, TxState status){
         auto it = txRecords.find(transactionID);
-        if (it != txRecords.end())
+        if (it != txRecords.end()){
             it->second.second = status;
+            // if transaction was canceled return used amount to wallet
+            if (status == TxState::CANCELED)
+                addToBlance(it->second.first.cashAmount);
+        }
     }
 
     void Wallet::receivedTransaction(std::string transactionID, TransactionData txData, TxState status){

@@ -90,7 +90,9 @@ private:
     /// @brief Add Block header to Chain (header issuer is local node)
     /// @warning this method should be used to add block headers that was issued by this node only
     /// @param block block with block header that will be inserted into chain
-    void addBlockHeaderToChain(BlockPtr &block);
+    /// @param currBlockId id of current working block (hash of `block`)
+    /// @return true if quorum for consensus on block validation was reached, false if not
+    bool addBlockHeaderToChain(BlockPtr &block, byte64_t &currBlockId);
 
     /// @brief Iterate through given `txSet`, check the sequence numbers of the transactions, balances of accounts and fill  
     /// `accDiffs` hash table with account differences. This also notify wallet and set wallet account balance and transaction records
@@ -108,7 +110,7 @@ private:
     void executeBlock(BlockPtr block);
 
     /// @brief Get ID and header of Block on which majority of UNL nodes are woking on
-    std::pair<byte64_t&, BlockHeaderPtr> getPreferred();
+    std::pair<byte64_t&, BlockHeaderPtr&> getPreferred();
 
     /// @brief Fill `set` with transactions (transactions from txPool_)
     /// @param set [out] final set of transactions
@@ -208,6 +210,11 @@ public:
     /// Disputes are transactions that are different between proposed set of transactions
     /// @param set Set of transaction for which to create disputes
     void createDisputes(CTxSet &set);
+
+    /// @brief Update disputes based on new proposed `set` from some `node`
+    /// @param node node for which to update disputes
+    /// @param set set of proposed transactions
+    void updateDisputes(const PeerId &node, CTxSet &set);
 
     /// @brief Base on disputed transaction update our proposal
     void updateProposals();

@@ -72,7 +72,7 @@ public:
         bool setAsUNL;      ///< flag telling if connection should be treated as connection on the UNL
     };
 
-    ConnectionManager(MessageProcessor *msgProcessor, AccountAddressStorage *addressStorage, std::string &walletID, NodeType type);
+    ConnectionManager(MessageProcessor *msgProcessor, AccountAddressStorage *addressStorage, Wallet *wallet, NodeType type);
 
     ~ConnectionManager();
 
@@ -111,7 +111,7 @@ private:
 
     MessageProcessor *messsagProcessor;
     AccountAddressStorage *addrStorage;
-    std::string localWalletID; ///< wallet address/peerID of local (this) node
+    Wallet *wallet_;
     NodeType localNodeType; ///< Type of node running this ConnectionManager
     Server *server; ///< Instance of a PQB server
 

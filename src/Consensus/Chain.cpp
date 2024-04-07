@@ -10,14 +10,14 @@
 
 
 #include "Chain.hpp"
-
+#include "Log.hpp"
 
 namespace PQB{
     
     
-    void Chain::insert(std::string issuer, BlockHeaderPtr block){
+    void Chain::insert(std::string issuer, BlockHeaderPtr block, bool isLocal){
         auto lastRef = validations.find(issuer);
-        if (lastRef != validations.end()){ // if issuer already made a validation update tip-support
+        if ((lastRef != validations.end()) && !isLocal){ // if issuer already made a validation update tip-support
             if (lastRef->second != nullptr){
                 lastRef->second->tipSupport--;
             }
@@ -25,18 +25,21 @@ namespace PQB{
         BlockNode::ID blockId = block->getBlockHash();
         auto exNode = ch.find(blockId);
         if (exNode != ch.end()){ // The same block is already in tree, just update its tip-support
-            exNode->second.tipSupport++;
+            if (!isLocal){
+                exNode->second.tipSupport++;
+            }
             if (lastRef != validations.end())
                 lastRef->second = &exNode->second;
             else
                 validations.emplace(issuer, &exNode->second);
+            PQB_LOG_TRACE("CHAIN", "Node {} updated its block to {}. New tip-support is {}",  shortStr(issuer), shortStr(blockId.getHex()), exNode->second.tipSupport);
         } else { // Block is not in tree yet, add the new block
             BlockNode newNode;
             newNode.id = blockId;
             newNode.block = block;
             newNode.childs.clear();
             newNode.validChild = nullptr;
-            newNode.tipSupport = 1;
+            newNode.tipSupport = (isLocal) ? 0 : 1;
             auto parentBlockNode = ch.find(block->previousBlockHash);
             if (parentBlockNode != ch.end()){
                 newNode.parent = &parentBlockNode->second;
@@ -47,17 +50,22 @@ namespace PQB{
                         lastRef->second = &exNode->second;
                     else
                         validations.emplace(issuer, &exNode->second);
+                    PQB_LOG_TRACE("CHAIN", "Block {} inserted by {} with tip-support: {}", shortStr(blockId.getHex()), shortStr(issuer), newNode.tipSupport);
+                } else {
+                    PQB_LOG_ERROR("CHAIN", "Block was not inserted into the chain because it already exists");
                 }
+            } else {
+                PQB_LOG_ERROR("CHAIN", "Block was not inserted into the chain because of unknow parent block");
             }
         }
     }
 
     bool Chain::updateValidBlock(byte64_t &block_id){
         const auto it = ch.find(block_id);
-        if (checkQuorum(it->second)){
-            if (it != ch.end()){
-                validBlock.validChild = &it->second;
+        if (it != ch.end()){
+            if (checkQuorum(it->second)){
                 validBlock = it->second;
+                PQB_LOG_TRACE("CHAIN", "New valid block is: {}", shortStr(validBlock.id.getHex()));
                 return true;
             }
         }
@@ -65,9 +73,19 @@ namespace PQB{
     }
 
     void Chain::assignAccountHashToValidBlock(byte64_t &accHash){
-        validBlock.block->accountBalanceMerkleRootHash = accHash;
         auto it = ch.find(validBlock.id);
-        it->second.block->accountBalanceMerkleRootHash = accHash;
+        validBlock.block->accountBalanceMerkleRootHash = accHash;
+        validBlock.id = validBlock.block->getBlockHash();
+        auto [newit, result] = ch.emplace(validBlock.id, validBlock);
+        if (result){
+            it->second.parent->validChild = &newit->second; // replace pointer to valid block of the parent
+            for (auto &peer : validations){
+                // if block proposed by peer is new validated block replace pointer to it
+                if (peer.second->id == it->second.id)
+                    peer.second = &newit->second;
+            }
+        }
+        PQB_LOG_TRACE("CHAIN", "New valid block hash is: {}", shortStr(validBlock.id.getHex()));
     }
 
     void Chain::putChainDataToStringStream(std::stringstream &ss){
@@ -83,7 +101,7 @@ namespace PQB{
             ss << " | " << std::endl;
 
             BlockNode *node = it->second.validChild;
-            while (node){
+            while (node != nullptr){
                 ss << " V " << std::endl;
                 ss << node->id.getHex() << std::endl;
                 ss << " | " << std::endl;
@@ -98,11 +116,11 @@ namespace PQB{
         
     }
 
-    std::pair<byte64_t&, BlockHeaderPtr> Chain::getPreferredBlock(){
+    std::pair<byte64_t&, BlockHeaderPtr&> Chain::getPreferredBlock(){
         return getPreferredBlock(&validBlock);
     }
 
-    std::pair<byte64_t &, BlockHeaderPtr> Chain::getPreferredBlock(BlockNode *n)
+    std::pair<byte64_t&, BlockHeaderPtr&> Chain::getPreferredBlock(BlockNode *n)
     {
         if (n->childs.empty()){
             return {n->id, n->block};
@@ -132,18 +150,11 @@ namespace PQB{
 
     bool Chain::checkQuorum(BlockNode &n){
         // Quorum is 80% of all validators and candidate valid block has to have greater sequence number than current validBlock
-        size_t valCount = n.tipSupport;
-        // Vote of this node does not count to quorum, just votes from UNL nodes.
-        // So if this node vote is the same as checked block decrease tipSupport
-        const auto &it = validations.find(thisNodeId);
-        if (it != validations.end()){
-            if (it->second->id == n.id)
-                --valCount;
-        }
-
-        if ((valCount > (0.8 * UNLcount)) && (n.block->sequence > validBlock.block->sequence)){
+        if ((n.tipSupport > (0.8 * UNLcount)) && (n.block->sequence > validBlock.block->sequence)){
+            PQB_LOG_TRACE("CHAIN", "Quorum for new valid block reached. Chosen block {} with tip-support {}", shortStr(n.id.getHex()), n.tipSupport);
             return true;
         }
+        PQB_LOG_TRACE("CHAIN", "Quorum still not reached. Block {} has tip-support {}", shortStr(n.id.getHex()), n.tipSupport);
         return false;
     }
 
@@ -156,14 +167,12 @@ namespace PQB{
     }
 
     std::uint32_t Chain::getUncommitted(BlockNode &n){
-        std::uint32_t cnt = 0;
+        std::uint32_t cnt = UNLcount;
         for (const auto &it : validations){
             if (it.second != nullptr){
-                if (it.second->block->sequence < n.block->sequence){
-                    cnt++;
+                if (it.second->block->sequence >= n.block->sequence){
+                    --cnt;
                 }
-            } else {
-                cnt++;
             }
         }
         return cnt;

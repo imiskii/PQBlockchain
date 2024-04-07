@@ -137,6 +137,16 @@ public:
         return hdr;
     }
 
+    /// @brief Set header to this block
+    void setBlockHeader(BlockHeader *hdr){
+        version = hdr->version;
+        sequence = hdr->sequence;
+        transactionsMerkleRootHash = hdr->transactionsMerkleRootHash;
+        previousBlockHash = hdr->previousBlockHash;
+        accountBalanceMerkleRootHash = hdr->accountBalanceMerkleRootHash;
+        size = hdr->size;
+    }
+
     /// @brief Get size of the Block in bytes
     size_t getSize() const;
 

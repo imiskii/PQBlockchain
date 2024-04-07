@@ -29,26 +29,26 @@ namespace PQB{
         delete wallet;
         delete blockS;
         delete accS;
+        if (chain)
+            delete chain;
         if (consensus)
             delete consensus;
         if (msgPrc)
             delete msgPrc;
         if (connMng)
             delete connMng;
-        if (chain)
-            delete chain;
     }
 
     bool PQBModel::initializeManagers(NodeType node_type){
         if (!openConfigurationAndDatabase()){
             return false;
         }
+        std::string walletID = wallet->getWalletID().getHex();
+        chain = new Chain(wallet->getUNL().size(), walletID);
         consensus = new ConsensusWrapper(chain, blockS, accS, wallet);
         msgPrc = new MessageProcessor(accS, blockS, consensus, wallet);
-        std::string walletID = wallet->getWalletID().getHex();
-        connMng = new ConnectionManager(msgPrc, accS->addrDB, walletID, node_type);
+        connMng = new ConnectionManager(msgPrc, accS->addrDB, wallet, node_type);
         msgPrc->assignConnectionManager(connMng);
-        chain = new Chain(wallet->getUNL().size(), wallet->getWalletID().getHex());
         consensus->assignConnectionManager(connMng);
         return true;
     }
