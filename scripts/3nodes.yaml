@@ -1,0 +1,49 @@
+version: "3.9"
+
+networks:
+  pqb_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.5.0.0/24
+          gateway: 10.5.0.1
+
+
+x-defaults: &pqb_base
+  image: pqb_image
+  stdin_open: true
+  tty: true
+
+
+services:
+
+  node1:
+    <<: *pqb_base
+    container_name: node1
+    command: ["sh", "-c", "valgrind --leak-check=full ./main -t validator -s falcon1024 -c tmp/confs/conf1.json"]
+    ports:
+      - "45001:3330"
+    networks:
+      pqb_net:
+        ipv4_address: 10.5.0.2
+
+  node2:
+    <<: *pqb_base
+    container_name: node2
+    command: ["sh", "-c", "valgrind --leak-check=full ./main -t validator -s falcon1024 -c tmp/confs/conf2.json"]
+    ports:
+      - "45002:3330"
+    networks:
+      pqb_net:
+        ipv4_address: 10.5.0.3
+
+  node3:
+    <<: *pqb_base
+    container_name: node3
+    command: ["sh", "-c", "valgrind --leak-check=full ./main -t validator -s falcon1024 -c tmp/confs/conf3.json"]
+    ports:
+      - "45003:3330"
+    networks:
+      pqb_net:
+        ipv4_address: 10.5.0.4

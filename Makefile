@@ -32,6 +32,13 @@ compile:
 run:
 	$(EX) $(ARGS)
 
+# generate configuration files in scripts/confs with txt file in scripts/confs.txt. Require one program argument, which is the name of signature algorith
+genconfs:
+	./build/src/App/conf-generator $(ARGS)
+	rm -rf scripts/confs/
+	mv tmp/confs scripts/confs
+	mkdir tmp/confs
+
 ##################################################################
 
 ##
@@ -44,6 +51,34 @@ test:
 alltests:
 	GTEST_COLOR=1 ctest --test-dir build --output-on-failure -j12
 
+
+##################################################################
+
+##
+# Docker
+
+# Create the docker image
+dimagec:
+	docker build -t pqb_image .
+
+# Delete the docker image
+dimager:
+	docker rmi pqb_image
+
+# Compose docker containers. Requires one argument and it is the file which .yaml (docker-compose) should it use
+dcomposeup:
+	docker-compose -f $(ARGS) up --rm
+
+drm:
+	docker rm -f $$(sudo docker ps -aq)
+
+# Attach to docker image
+datt:
+	docker attach node$(ARGS)
+
+# Copy log file from container
+dlog:
+	docker cp node$(ARGS):/PQB/tmp/log.txt .
 
 ##################################################################
 
