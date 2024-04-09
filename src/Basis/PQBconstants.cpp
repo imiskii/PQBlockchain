@@ -26,6 +26,9 @@ namespace PQB{
 
     /// @brief Maximal size of a block in bytes (1MB)
     constexpr size_t MAX_BLOCK_SIZE = 1048576;
+    /// @brief SHA-512 hash of the empty string, It is used for message checking if message was well parsed and as a padding for empty
+    /// hash values for exmaple in block's transaction hash etc., if they are not calculated yet or they are just empty
+    constexpr std::string_view EMPTY_STRING_HASH = "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e";
 
     /// @brief Max si of the message sended/received with a socket
     constexpr size_t MAX_MESSAGE_SIZE = 1400;

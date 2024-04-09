@@ -25,6 +25,7 @@ namespace PQB{
     extern const std::string_view LOG_FILE;
 
     extern const size_t MAX_BLOCK_SIZE;
+    extern const std::string_view EMPTY_STRING_HASH;
 
     extern const size_t MAX_MESSAGE_SIZE;
     extern const size_t PQB_SERVER_PORT;

@@ -16,6 +16,7 @@
 
 #include "Blob.hpp"
 #include "Block.hpp"
+#include "PQBconstants.hpp"
 
 
 namespace PQB{

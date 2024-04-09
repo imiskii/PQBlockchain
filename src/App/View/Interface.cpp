@@ -23,6 +23,7 @@ void Console::openConsol(){
         std::getline(std::cin, input);
 
         if (std::cin.eof()){
+            std::cout << "Consol got EOF, closing." << std::endl;
             break;
         }
 

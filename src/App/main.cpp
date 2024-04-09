@@ -75,7 +75,10 @@ int main(int argc, char *argv[]){
     PQB::Signer::GetInstance(parsedArgs.signature_alg);
 
     PQB::PQBModel model(parsedArgs.conf_file_path);
-    model.initializeManagers(parsedArgs.node);
+    if (!model.initializeManagers(parsedArgs.node)){
+        PQB_LOG_ERROR("MAIN", "Failed to initialize managers");
+        return 1;
+    }
     model.initializeUNLConnections();
     PQB::Console console;
     PQB::Controller controller(&console, &model);

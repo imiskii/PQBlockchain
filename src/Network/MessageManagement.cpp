@@ -64,7 +64,9 @@ namespace PQB
     void ConnectionManager::notifyConnectionVersion(socket_t connectionID, std::string &peerID, bool status){
         // If connection was considered unwanted close it and delete from connectionPool
         if (!status){
-            deleteConnection(connectionID);
+            /// The connection can not be deleted right now, because manageConnections() method is iterating through connection set
+            socketsToClose.push_back(connectionID);
+            PQB_LOG_INFO("CONNECTION MANAGER", "Connection with {} will be closed because of negative status", shortStr(peerID));
             return;
         }
 
@@ -77,13 +79,19 @@ namespace PQB
             // This problem may occure if when two peers initialize connection with each other at the same time, so
             // they send VERSION message to each other and they are both waiting for ACK message.
             if (wallet_->getWalletID().getHex() > peerID){ // If local wallet ID > peer ID, delete new connection and keep existing connection
-                deleteConnection(connectionID);
+                socketsToClose.push_back(connectionID);
+                PQB_LOG_INFO("CONNECTION MANAGER", "Duplicti connection with {} peer connection will be closed", shortStr(peerID));
                 return;
             } else { // Delete existing connection and keep this connection
                 Connection *exConn= getConnectionFromConnectionPool(peerID);
                 // if existing connection was UNL connection this has to keep at as well
                 thisConn->isUNL = exConn->isUNL;
-                deleteConnection(exConn->getConnectionSocketFD());
+                // Because there will be inserted new peerID in setOfConnectedPeers, existing peerID has to be renamed first and then
+                // added to vector with socketIDs to delete. New name will be just the substring of former peerID
+                std::string newId = peerID.substr(64);
+                updatePeerIdOfConnectionInConnectionPool(exConn->getConnectionSocketFD(), peerID, newId);
+                socketsToClose.push_back(exConn->getConnectionSocketFD());
+                PQB_LOG_INFO("CONNECTION MANAGER", "Duplicti connection with {} our connection will be closed", shortStr(peerID));
             }
         }
         // Check for UNL connections
@@ -101,6 +109,25 @@ namespace PQB
         msg->serialize(nullptr);
         MessageRequest_t req = {.type=MessageRequestType::ONE, .connectionID=thisConn->getConnectionSocketFD(), .peerID=peerID, .message=msg};
         addMessageRequest(req);
+    }
+
+    void ConnectionManager::putConnectionDataToStringStream(std::stringstream &ss){
+        ss
+        << std::setw(15) << std::left << "Connection ID"
+        << std::setw(11) << std::left << "Socket fd"
+        << std::setw(14) << std::left << "Is confirmed"
+        << std::setw(8) << std::left << "Is UNL"
+        << std::endl;
+
+        for (const auto &it : connectionPool){
+            Connection *conn = it.second;
+            ss
+            << std::setw(15) << shortStr(conn->connID)
+            << std::setw(11) << it.first
+            << std::setw(14) << (conn->isConfirmed ? "true" : "false")
+            << std::setw(8) << (conn->isUNL ? "true" : "false") 
+            << std::endl;
+        }
     }
 
     bool ConnectionManager::createNewConnection(std::string &peerID, std::vector<std::string> &addresses, bool isOnUNL){
@@ -143,9 +170,9 @@ namespace PQB
 
     void ConnectionManager::deleteConnection(const socket_t connectionID){
         auto connection = getConnectionFromConnectionPool(connectionID);
-        PQB_LOG_INFO("CONNECTION MANAGER", "Connection with {} was closed", shortStr(connection->connID));
         if (connection != nullptr){
             deleteConnectionFromConnectionPool(connectionID, connection->connID);
+            PQB_LOG_INFO("CONNECTION MANAGER", "Connection with {} was closed", shortStr(connection->connID));
             delete connection;
         }
     }
@@ -344,7 +371,6 @@ namespace PQB
                     socketDescriptors.at(0).revents = 0;
                 }
                 bool closeFlag = false;
-                std::vector<int> socketsToClose;
                 for (auto it = socketDescriptors.begin() + isServer; it != socketDescriptors.end(); ++it){
                     if ((it->revents & (POLLIN | POLLPRI)) != 0){
                         handleConnectionPoll(it->fd, &closeFlag);
@@ -605,8 +631,8 @@ namespace PQB
             // True is here hardcoded for now, so every connection will be accepted.
             // In case of any changes here can be put any check that can decide if connection should be accepted or not.
             connMng->notifyConnectionVersion(msgi.connection_id, peerID, true);
+            delete msgi.msg;
         }
-        delete msgi.msg;
     }
 
     void MessageProcessor::procTransactionMessage(const message_item_t &msgi){
@@ -615,12 +641,12 @@ namespace PQB
             TransactionPtr msgData = std::make_shared<Transaction>();
             msg->deserialize(msgData.get());
             if (checkTransaction(msgData)){
-                consensus->addTransactionToPool(msgData);
-                waitingData.erase(msgData->IDHash);
-                forwardInvMessage(msgData->IDHash, InvType::TX, msgi);
+                if (consensus->addTransactionToPool(msgData) && !waitingData.erase(msgData->IDHash)){ // If not yet processed
+                    forwardInvMessage(msgData->IDHash, InvType::TX, msgi);
+                }
             }
+            delete msgi.msg;
         }
-        delete msgi.msg;
     }
 
     void MessageProcessor::procBlockProposalMessage(const message_item_t &msgi){
@@ -631,13 +657,8 @@ namespace PQB
             if (checkProposal(msgData)){
                 consensus->notifyBlockProposal(msgData);
             }
-            // Deserialize, Check structure (accountHash = is null), signature
-            // Forward it to ConsensusWrapper
-            // There, find the coresponding transaction set and create Block object
-            // If coresponding tx set is missing pass (ask for it)
-            // Add it to Chain
+            delete msgi.msg;
         }
-        delete msgi.msg;
     }
 
     void MessageProcessor::procTxSetProposalMessage(const message_item_t &msgi){
@@ -670,8 +691,8 @@ namespace PQB
                 msgData->txSet.txSet = newSet;
                 consensus->notifyTxSetProposal(msgData);
             }
+            delete msgi.msg;
         }
-        delete msgi.msg;
     }
 
     void MessageProcessor::procBlockMessage(const message_item_t &msgi){
@@ -688,8 +709,8 @@ namespace PQB
                     blockInvQuorum.erase(it);
                 }
             }
+            delete msgi.msg;
         }
-        delete msgi.msg;
     }
 
     void MessageProcessor::procAccountMessage(const message_item_t &msgi){
@@ -709,8 +730,8 @@ namespace PQB
                     forwardInvMessage(accID, InvType::ACCOUNT, msgi);
                 }
             }
+            delete msgi.msg;
         }
-        delete msgi.msg;
     }
 
     void MessageProcessor::procInvMessage(const message_item_t &msgi){
@@ -725,20 +746,23 @@ namespace PQB
                 {
                 case InvType::TX:
                     ret = procInvTransaction(inv);
-                    forwardInvMessage(inv, msgi);
                     break;
                 case InvType::BLOCK:
                     ret = procInvBlock(inv);
                     break;
                 case InvType::ACCOUNT:
                     ret = procInvAccount(inv);
-                    forwardInvMessage(inv, msgi);
                     break;
                 default:
                     break;
                 }
-                if (ret)
+                if (ret){
                     getDataInventories.push_back(inv);
+                    // forvard message if we do not have it and it is not a block inv., this ensure that messages will be forwarded only once
+                    if (inv.requestType != InvType::BLOCK){
+                        forwardInvMessage(inv, msgi);
+                    }
+                }
             }
             if (!getDataInventories.empty()){
                 GetDataMessage *getDataMsg = new GetDataMessage(GetDataMessage::getPayloadSize(getDataInventories.size()));
@@ -746,8 +770,8 @@ namespace PQB
                 ConnectionManager::MessageRequest_t req = {.type=ConnectionManager::MessageRequestType::ONE, .connectionID=msgi.connection_id, .peerID=msgi.peer_id, .message=getDataMsg};
                 connMng->addMessageRequest(req);
             }
+            delete msgi.msg;
         }
-        delete msgi.msg;
     }
 
     void MessageProcessor::procGetDataMessage(const message_item_t &msgi){
@@ -772,14 +796,13 @@ namespace PQB
                     break;
                 }
             }
+            delete msgi.msg;
         }
-
-        delete msgi.msg;
     }
 
 
     bool MessageProcessor::procInvTransaction(const inv_message_t &inv){
-        if (waitingData.find(inv.itemID) != waitingData.end()){
+        if (waitingData.find(inv.itemID) == waitingData.end()){
             if (!consensus->isTransactionInPool(inv.itemID)){
                 waitingData.insert(inv.itemID);
                 return true;
@@ -808,7 +831,7 @@ namespace PQB
     }
 
     bool MessageProcessor::procInvAccount(const inv_message_t &inv){
-        if (waitingData.find(inv.itemID) != waitingData.end()){
+        if (waitingData.find(inv.itemID) == waitingData.end()){
             Account acc;
             if (!accStor->getAccount(inv.itemID, acc)){
                 waitingData.insert(inv.itemID);

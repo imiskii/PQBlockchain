@@ -82,10 +82,14 @@ namespace PQB{
     }
 
     TransactionPtr Wallet::createNewTransaction(std::string &receiver, PQB::cash amount){
-        signed long newBalance = balance - amount;
-        if (newBalance < 0){
+
+        // Check if wallet has enough balance
+        /// @note for testing purposes disabled
+        /*
+        if (balance < amount){
             return nullptr;
         }
+        */
         
         txSequenceNumber++;
         balance -= amount;

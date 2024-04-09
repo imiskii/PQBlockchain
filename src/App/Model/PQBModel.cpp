@@ -112,6 +112,9 @@ namespace PQB{
         case PrintData::CHAIN:
             chain->putChainDataToStringStream(ss);
             break;
+        case PrintData::CONNECTIONS:
+            connMng->putConnectionDataToStringStream(ss);
+            break;
         default:
             break;
         }

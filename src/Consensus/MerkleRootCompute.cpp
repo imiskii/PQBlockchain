@@ -17,6 +17,11 @@ namespace PQB{
 
 
 byte64_t ComputeMerkleRoot(std::vector<byte64_t> leafsHashes){
+    if (leafsHashes.empty()){
+        byte64_t empty;
+        empty.setHex(std::string(EMPTY_STRING_HASH));
+        return empty;
+    }
     while (leafsHashes.size() > 1)
     {
         if(leafsHashes.size() & 1){

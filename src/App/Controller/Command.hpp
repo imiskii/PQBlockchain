@@ -117,6 +117,13 @@ public:
     void Behavior() const override;
 };
 
+/// @brief Print established connection
+class PrintConnectionsC : public Command{
+public:
+    bool CheckArguments() const override;
+    void Behavior() const override;
+};
+
 
 class CommandCreator{
 public:
@@ -232,6 +239,17 @@ public:
     }
     const char* getCommandHelp() const override{
         return "chain: Print tree of blocks from geneseis block to most recent block";
+    }
+};
+
+/// @brief PrintChainC Comand Creator
+class PrintConnectionsCC : public CommandCreator{
+public:
+    Command* FactoryMethod() const override{
+        return new PrintConnectionsC();
+    }
+    const char* getCommandHelp() const override{
+        return "chain: Print established connections";
     }
 };
 

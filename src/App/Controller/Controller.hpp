@@ -62,7 +62,8 @@ private:
         {"blocks", new PrintBlocksCC()},
         {"blockTxs", new PrintBlockTxsCC()},
         {"accs", new PrintAccountsCC()},
-        {"chain", new PrintChainCC()}
+        {"chain", new PrintChainCC()},
+        {"conns", new PrintConnectionsCC()}
     };
 };
 

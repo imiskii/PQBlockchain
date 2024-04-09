@@ -72,7 +72,7 @@ struct inv_message_t{
 
 
 /// @brief first 32 bits of SHA-512 hash of empty string. This constant is used as check if message header was parsed successfully
-const uint32_t MESSAGE_MAGIC_CONST = 4178435447;
+const uint32_t MESSAGE_MAGIC_CONST = 3481526581;
 
 class Message{
 public:

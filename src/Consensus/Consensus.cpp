@@ -68,19 +68,22 @@ namespace PQB{
     TransactionPtr ConsensusWrapper::getTransactionFromPool(const byte64_t tx_id){
         std::lock_guard<std::mutex> lock(consensusMutex_);
         const auto &it = txPool_.find(tx_id);
-        if (it == txPool_.end()){
+        if (it != txPool_.end()){
             return it->second;
         }
         return nullptr;
     }
 
-    void ConsensusWrapper::addTransactionToPool(TransactionPtr tx){
+    bool ConsensusWrapper::addTransactionToPool(TransactionPtr tx){
         std::lock_guard<std::mutex> lock(consensusMutex_);
         const auto it = txPool_.find(tx->IDHash);
         if (it == txPool_.end()){
             txPool_.emplace(tx->IDHash, tx);
+            consensusCondition_.notify_one();
+            return true;
+        } else {
+            return false;
         }
-        consensusCondition_.notify_one();
     }
 
     void ConsensusWrapper::removeTransactionFromPool(const byte64_t tx_id){
@@ -198,12 +201,13 @@ namespace PQB{
                     PQB_LOG_TRACE("CONSENSUS", "Transaction {} from sender {} not validated because of transactions with duplicit sequence numbers: {}",
                                 shortStr(tx->IDHash.getHex()), shortStr(senderHash), tx->sequenceNumber);
                     flagMoved = true;
-                    ++next;
+                    next = txSet.erase(next);
                 } else {
                     break;
                 }
             }
             if (flagMoved){
+                txSet.erase(it);
                 it = next;
                 stateOfTx = WalletData::TxState::CANCELED;
                 continue;
@@ -211,9 +215,9 @@ namespace PQB{
             // Check for available balance
             if (upBalance < tx->cashAmount){ // check for available balance
                 PQB_LOG_TRACE("CONSENSUS", "Transaction {} from sender {} not validated because of missing balance: {}", 
-                            shortStr(tx->IDHash.getHex()), shortStr(senderHash), (upBalance - tx->cashAmount));
+                            shortStr(tx->IDHash.getHex()), shortStr(senderHash), (static_cast<signed long>(upBalance) - static_cast<signed long>(tx->cashAmount)));
                 stateOfTx = WalletData::TxState::CANCELED;
-                ++it;
+                it = txSet.erase(it);
                 continue;
             }
             // Check for sequence number, transaction sequence number has to be greater then last one
@@ -221,7 +225,7 @@ namespace PQB{
                 PQB_LOG_TRACE("CONSENSUS", "Transaction {} from sender {} not validated because of invalid transaction sequence. Last sequence: {}, but this transaction has sequence: {}",
                             shortStr(tx->IDHash.getHex()), shortStr(senderHash), acc.txSequence, tx->sequenceNumber);
                 stateOfTx = WalletData::TxState::CANCELED;
-                ++it;
+                it = txSet.erase(it);
                 continue;
             }
             PQB_LOG_TRACE("CONSENSUS", "Transaction {} from sender {} is validated", 
@@ -255,13 +259,24 @@ namespace PQB{
     }
 
     void ConsensusWrapper::executeBlock(BlockPtr block){
+        size_t txSetCount = block->txSet.size(); // save number of transaction for further check
+
+        // Remove transactions from txPool_, it has to be done before counting account differences
+        // because there could be transactions that are canceled and erased from block->txSet
+        for (const auto &tx : block->txSet){
+            txPool_.erase(tx->IDHash);
+        }
+
         std::unordered_map<std::string, AccountBalanceStorage::AccountDifference> accDiffs;
         countAccountDifferencesByTxSet(block->txSet, accDiffs);
         accS_->blncDB->setBalancesByAccDiffs(accDiffs);
 
-        for (const auto &tx : block->txSet){
-            txPool_.erase(tx->IDHash);
+        if (block->txSet.size() != txSetCount){ // if there were invalid transactions recalculate txSet
+            block->transactionCount = block->txSet.size();
+            block->transactionsMerkleRootHash = ComputeTxSetMerkleRoot(block->txSet);
+            block->size = block->getSize();
         }
+
         block->accountBalanceMerkleRootHash = accS_->blncDB->getAccountsMerkleRootHash();
         chain_->assignAccountHashToValidBlock(block->accountBalanceMerkleRootHash);
         blockS_->setBlock(block.get());
@@ -470,6 +485,7 @@ namespace PQB{
 
     void Consensus::onAccept(){
         // Finish new Block
+        currBlock_->version = 1;
         currBlock_->previousBlockHash = prevBlockid_;
         currBlock_->transactionCount = result_.txns.size();
         currBlock_->txSet = std::move(result_.txns);
@@ -484,7 +500,10 @@ namespace PQB{
         // Assign prevBlock and start new round
         *prevBlock_ = *currBlock_;
         prevBlockid_ = currBlockId_;
-        prevRoundTime_ = result_.roundTime;
+        /// @note For testing purposes there will be minimum round time
+        /// it is because consensus may be too fast when testing on local network or local machine
+        /// if roundTime was more then 3s keep it if it was less the 3s use roundTime 8s
+        prevRoundTime_ = (result_.roundTime > std::chrono::milliseconds(3000) ? result_.roundTime : std::chrono::milliseconds(8000));
         PQB_LOG_TRACE("CONSENSUS", "New accepted block {}", shortStr(currBlockId_.getHex()));
         // Add block to chain, if new valid block is set execute it
         if (wrapper_->addBlockHeaderToChain(currBlock_, currBlockId_)){

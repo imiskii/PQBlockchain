@@ -64,7 +64,8 @@ public:
         BLOCKS,
         BLOCK_TXs,
         ACCOUNTS,
-        CHAIN
+        CHAIN,
+        CONNECTIONS
     };
 
     /// @brief Get data for printing

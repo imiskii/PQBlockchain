@@ -65,14 +65,22 @@ namespace PQB{
             newMsg->addFragment(buffer, nBytes);
             bytesReceived += nBytes;
             std::memset(buffer, 0, bufferSize);
+            bufferSize = ((newMsg->getSize() - bytesReceived) < MAX_MESSAGE_SIZE ? (newMsg->getSize() - bytesReceived) : MAX_MESSAGE_SIZE);
         }
         delete[] buffer;
         if (newMsg->checkMessage()){
-            PQB_LOG_TRACE("NET", "{} message received from {}", Message::messageTypeToString(newMsg->getType()), shortStr(connID));
             if (filterMessage(newMsg)){
+                PQB_LOG_TRACE("NET", "{} message received from {}", Message::messageTypeToString(newMsg->getType()), shortStr(connID));
                 return newMsg;
+            } else {
+                PQB_LOG_TRACE("NET", "{} message received from {}, but it was filtered", 
+                            Message::messageTypeToString(newMsg->getType()), shortStr(connID));
             }
+        } else {
+            PQB_LOG_TRACE("NET", "{} message received from {}, but it was corrupted",
+                        Message::messageTypeToString(newMsg->getType()), shortStr(connID));
         }
+        
         delete newMsg;
         return nullptr;
     }

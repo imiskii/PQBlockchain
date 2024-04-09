@@ -122,6 +122,16 @@ namespace PQB{
         outputConsole->printToConsole(ss.str().c_str());
     }
 
+    bool PrintConnectionsC::CheckArguments() const{
+        return args.empty();
+    }
+
+    void PrintConnectionsC::Behavior() const{
+        std::stringstream ss;
+        model->getDataToPrint(ss, PQB::PQBModel::PrintData::CONNECTIONS);
+        outputConsole->printToConsole(ss.str().c_str());
+    }
+
 } // namespace PQB
 
 /* END OF FILE */

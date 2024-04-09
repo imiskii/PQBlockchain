@@ -95,11 +95,12 @@ private:
     bool addBlockHeaderToChain(BlockPtr &block, byte64_t &currBlockId);
 
     /// @brief Iterate through given `txSet`, check the sequence numbers of the transactions, balances of accounts and fill  
-    /// `accDiffs` hash table with account differences. This also notify wallet and set wallet account balance and transaction records
+    /// `accDiffs` hash table with account differences. This also notify wallet and set wallet account balance and transaction records.
+    /// Additionaly this function removes invalid transactions from txSet.
     /// @param txSet set with transaction for which will be created account differences
     /// @param accDiffs [out] filled account difference hash table
     /// @note This function depends on right ordering of transactions in given `txSet`. The transactions have to be
-    /// grouped by senderId and then ordered by transactions sequence numbers
+    /// grouped by senderId and then ordered by transactions sequence numbers.
     void countAccountDifferencesByTxSet(
         TransactionSet &txSet, 
         std::unordered_map<std::string, AccountBalanceStorage::AccountDifference> &accDiffs);
@@ -137,8 +138,9 @@ public:
     /// @brief Get transaction from pool based on give transaction has (ID), return nullptr if not found
     TransactionPtr getTransactionFromPool(const byte64_t tx_id);
 
-    /// @brief Add new transaction to the transaction pool, if duplicit nothing happend
-    void addTransactionToPool(TransactionPtr tx);
+    /// @brief Add new transaction to the transaction pool
+    /// @return true if transaction was added, false if transaction already exists in the pool
+    bool addTransactionToPool(TransactionPtr tx);
 
     /// @brief Erase transaction from transaction pool, if not found do nothing
     void removeTransactionFromPool(const byte64_t tx_id);

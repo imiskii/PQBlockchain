@@ -14,6 +14,7 @@
 
 #include <string>
 #include <vector>
+#include <sstream>
 #include <queue>
 #include <set>
 #include <map>
@@ -107,6 +108,13 @@ public:
      */
     void notifyConnectionVersion(socket_t connectionID, std::string &peerID, bool status);
 
+    /**
+     * @brief Put Connection information to the string stream `ss`
+     * 
+     * @param ss [out] string stream
+     */
+    void putConnectionDataToStringStream(std::stringstream &ss);
+
 private:
 
     MessageProcessor *messsagProcessor;
@@ -126,6 +134,8 @@ private:
     std::unordered_map<socket_t, Connection*> connectionPool; ///< socket descriptors mapped to Connections
     std::vector<struct pollfd> socketDescriptors; ///< vector of sokcet descriptors
     std::set<std::string> setOfConnectedPeers; ///< addresses of connected peers (use for check that just one connection with peer is kept)
+
+    std::vector<socket_t> socketsToClose; ///< vector with socket IDs that should be closed
 
     /**
      * @brief Initialize new Connection to peer (Create a New Connection object)
@@ -366,7 +376,7 @@ private:
 
     /*
      * "proc" methods are for processing individual messages.
-     * each "prco" method can process one specific type of message.
+     * each "proc" method can process one specific type of message.
      * The only attribut is message_itme_t structure which contains
      * attributes necessary to create replay on the message and it also
      * contins pointer to received message.
