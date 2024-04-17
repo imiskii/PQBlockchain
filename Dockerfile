@@ -7,7 +7,7 @@ RUN mkdir /PQB/tmp
 RUN mkdir /PQB/tmp/confs
 
 
-COPY build/src/App/main /PQB
+COPY build/src/App/pqb /PQB
 COPY build/src/App/acc-generator /PQB
 COPY scripts/confs /PQB/tmp/confs
 

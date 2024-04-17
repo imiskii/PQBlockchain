@@ -34,7 +34,6 @@ using namespace std;
  */
 struct args_t 
 {
-    PQB::NodeType node;
     std::string signature_alg;
     std::string conf_file_path;
 };
@@ -46,7 +45,6 @@ struct args_t
  */
 struct arg_flags_t
 {
-    bool t_flag;    ///< type flag
     bool s_flag;    ///< signature flag
     bool c_flag;    ///< conf flag
     bool h_flag;    ///< help flag

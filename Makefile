@@ -11,7 +11,7 @@ LOGIN=xlasmi00
 # PROJECT NAME
 PROJECT=PQBlockchain
 # EXECUTABLES NAMES
-EX=./build/src/App/main
+EX=./build/src/App/pqb
 # REMOVE
 RM=$(DOXYGEN)/html *.zip build/*
 

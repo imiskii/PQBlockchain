@@ -96,7 +96,7 @@ namespace PQB{
             ss << "Genesis Block" << std::endl;
             ss << " | " << std::endl;
             for (const auto &child : it->second.childs){
-                ss << " | ->" << child->id.getHex() << std::endl;
+                ss << " | ->" << shortStr(child->id.getHex()) << std::endl;
             }
             ss << " | " << std::endl;
 
@@ -106,7 +106,7 @@ namespace PQB{
                 ss << node->id.getHex() << std::endl;
                 ss << " | " << std::endl;
                 for (const auto &child : node->childs){
-                    ss << " | ->" << child->id.getHex() << std::endl;
+                    ss << " | ->" << shortStr(child->id.getHex()) << std::endl;
                 }
                 ss << " | " << std::endl;
                 node = node->validChild;

@@ -21,7 +21,7 @@ services:
   node1:
     <<: *pqb_base
     container_name: node1
-    command: ["sh", "-c", "valgrind --leak-check=full ./main -t validator -s falcon1024 -c tmp/confs/conf1.json"]
+    command: ["sh", "-c", "valgrind --leak-check=full ./pqb -t validator -s falcon1024 -c tmp/confs/conf1.json"]
     ports:
       - "45001:3330"
     networks:
@@ -31,7 +31,7 @@ services:
   node2:
     <<: *pqb_base
     container_name: node2
-    command: ["sh", "-c", "valgrind --leak-check=full ./main -t validator -s falcon1024 -c tmp/confs/conf2.json"]
+    command: ["sh", "-c", "valgrind --leak-check=full ./pqb -t validator -s falcon1024 -c tmp/confs/conf2.json"]
     ports:
       - "45002:3330"
     networks:
@@ -41,7 +41,7 @@ services:
   node3:
     <<: *pqb_base
     container_name: node3
-    command: ["sh", "-c", "valgrind --leak-check=full ./main -t validator -s falcon1024 -c tmp/confs/conf3.json"]
+    command: ["sh", "-c", "valgrind --leak-check=full ./pqb -t validator -s falcon1024 -c tmp/confs/conf3.json"]
     ports:
       - "45003:3330"
     networks:

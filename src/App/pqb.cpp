@@ -75,7 +75,7 @@ int main(int argc, char *argv[]){
     PQB::Signer::GetInstance(parsedArgs.signature_alg);
 
     PQB::PQBModel model(parsedArgs.conf_file_path);
-    if (!model.initializeManagers(parsedArgs.node)){
+    if (!model.initializeManagers(PQB::NodeType::VALIDATOR)){ // The type is hardcoded to be validator for purpose of testing
         PQB_LOG_ERROR("MAIN", "Failed to initialize managers");
         return 1;
     }

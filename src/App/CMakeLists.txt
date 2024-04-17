@@ -6,8 +6,8 @@ add_subdirectory(Model)
 ## MAIN.cpp
 
 # Create an executable
-add_executable(main main.cpp)
-target_link_libraries(main PRIVATE ArgparserLib InterfaceLib ControllerLib ModelLib SignerLib CommonLib)
+add_executable(pqb pqb.cpp)
+target_link_libraries(pqb PRIVATE ArgparserLib InterfaceLib ControllerLib ModelLib SignerLib CommonLib)
 
 
 ## Configuration generator

@@ -114,7 +114,7 @@ namespace PQB{
         auto it = txRecords.find(transactionID);
         if (it != txRecords.end()){
             it->second.second = status;
-            // if transaction was canceled return used amount to wallet
+            // if transaction was canceled return used amount to the wallet
             if (status == TxState::CANCELED)
                 addToBlance(it->second.first.cashAmount);
         }
