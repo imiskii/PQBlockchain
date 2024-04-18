@@ -49,7 +49,7 @@ test:
 
 
 alltests:
-	GTEST_COLOR=1 ctest --test-dir build --output-on-failure -j12
+	GTEST_COLOR=1 ctest --test-dir build/tests --output-on-failure -j12
 
 
 ##################################################################

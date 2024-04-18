@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.28)
 project(PQBlockchain
         VERSION 0.1
         DESCRIPTION "Post-quantum Blockchain"
-        LANGUAGES C CXX
+        LANGUAGES C CXX ASM
 )
 
 # Set C++ standard
@@ -23,7 +23,7 @@ include(CTest)
 
 # Global compile options
 add_compile_options(-Wall -Wextra -Wpedantic)
-add_link_options(-pthread -lncurses)
+add_link_options(-pthread)
 
 
 # Debug flag
@@ -33,9 +33,6 @@ if(ENABLE_DEBUG)
     set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -g")
 endif()
 
-
-# include external libraries
-find_package(Curses REQUIRED)
 
 # Include subdirectiories
 add_subdirectory(src)

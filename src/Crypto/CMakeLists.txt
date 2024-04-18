@@ -8,7 +8,7 @@ target_include_directories(HashManagerLib
 
 # Signer
 add_library(SignerLib Signer.cpp)
-target_link_libraries(SignerLib BasisLib CommonLib cryptopp falcon_1024)
+target_link_libraries(SignerLib BasisLib CommonLib cryptopp falcon_1024 falcon_512 dilithium2 dilithium3 dilithium5)
 target_include_directories(SignerLib 
     PUBLIC ${CMAKE_CURRENT_LIST_DIR}
 )

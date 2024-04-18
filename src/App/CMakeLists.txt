@@ -25,7 +25,7 @@ target_link_libraries(kem PRIVATE kyber_1024)
 
 ## SIG.cpp
 add_executable(sig sig.cpp)
-target_link_libraries(sig PRIVATE falcon_1024 CommonLib)
+target_link_libraries(sig PRIVATE falcon_1024 CommonLib SignerLib)
 
 
 ## TMP.cpp

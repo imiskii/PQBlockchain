@@ -21,16 +21,13 @@
 # Macro for adding new tests
 # 
 # Examples:
-# + package_add_test(Example example.cpp ArgParser "${PROJECT_DIR}")
-# + package_add_test(Example example.cpp [] "${PROJECT_DIR}")                   // no libraries
-# + package_add_test(Example example1.cpp example2.cpp [] "${PROJECT_DIR}")     // multiple sources
+# + package_add_test(Example example.cpp "ArgParser;AccountLib" "${PROJECT_DIR}")
+# + package_add_test(Example example.cpp "" "${PROJECT_DIR}")                   // no libraries
+# + package_add_test(Example example1.cpp example2.cpp "" "${PROJECT_DIR}")     // multiple sources
 macro(package_add_test TESTNAME FILES LIBRARIES TEST_WORKING_DIRECTORY)
     add_executable(${TESTNAME} ${FILES})
-    if(LIBRARIES)
-        target_link_libraries(${TESTNAME} gtest gmock gtest_main ${LIBRARIES})
-    else()
-        target_link_libraries(${TESTNAME} gtest gmock gtest_main)
-    endif()
+    message(STATUS "${TESTNAME} - LIBRARIES: ${LIBRARIES}")
+    target_link_libraries(${TESTNAME} gtest gmock gtest_main ${LIBRARIES})
     gtest_discover_tests(${TESTNAME}
         WORKING_DIRECTORY ${TEST_WORKING_DIRECTORY}
         PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${TEST_WORKING_DIRECTORY}"
@@ -39,10 +36,23 @@ macro(package_add_test TESTNAME FILES LIBRARIES TEST_WORKING_DIRECTORY)
 endmacro()
 
 
+
+
 if(BUILD_TESTING)
     enable_testing()
     include(GoogleTest)
-    package_add_test(Example example.cpp [] "${PROJECT_DIR}")
+    package_add_test(Example example.cpp "" "${PROJECT_DIR}")
+
+    # Signer
+    package_add_test(Falcon1024Sign Signer/falcon1024.cpp "SignerLib;CommonLib" "${PROJECT_DIR}")
+    package_add_test(Falcon512Sign Signer/falcon512.cpp "SignerLib;CommonLib" "${PROJECT_DIR}")
+    package_add_test(Dilithium5Sign Signer/dilithium5.cpp "SignerLib;CommonLib" "${PROJECT_DIR}")
+    package_add_test(Dilithium3Sign Signer/dilithium3.cpp "SignerLib;CommonLib" "${PROJECT_DIR}")
+    package_add_test(Dilithium2Sign Signer/dilithium2.cpp "SignerLib;CommonLib" "${PROJECT_DIR}")
+    package_add_test(Ed25519Sign Signer/ed25519.cpp "SignerLib;CommonLib" "${PROJECT_DIR}")
+    package_add_test(ECDSASign Signer/ecdsa.cpp "SignerLib;CommonLib" "${PROJECT_DIR}")
+
+    # ...
 
 endif()
 

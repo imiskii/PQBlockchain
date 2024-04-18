@@ -27,21 +27,21 @@
  *
  *   signature:
  *      header byte: 0011nnnn
- *      nonce     40 bytes
- *      value     (12 bits by element)
+ *      nonce (r)  40 bytes
+ *      value (s)  compressed format
  *
  *   message + signature:
  *      signature length   (2 bytes, big-endian)
  *      nonce              40 bytes
  *      message
  *      header byte:       0010nnnn
- *      value              (12 bits by element)
+ *      value              compressed format
  *      (signature length is 1+len(value), not counting the nonce)
  */
 
 /* see api.h */
 int
-PQCLEAN_FALCON1024_CLEAN_crypto_sign_keypair(
+PQCLEAN_FALCON1024_AVX2_crypto_sign_keypair(
     uint8_t *pk, uint8_t *sk) {
     union {
         uint8_t b[FALCON_KEYGEN_TEMP_10];
@@ -61,7 +61,7 @@ PQCLEAN_FALCON1024_CLEAN_crypto_sign_keypair(
     inner_shake256_init(&rng);
     inner_shake256_inject(&rng, seed, sizeof seed);
     inner_shake256_flip(&rng);
-    PQCLEAN_FALCON1024_CLEAN_keygen(&rng, f, g, F, NULL, h, 10, tmp.b);
+    PQCLEAN_FALCON1024_AVX2_keygen(&rng, f, g, F, NULL, h, 10, tmp.b);
     inner_shake256_ctx_release(&rng);
 
     /*
@@ -69,28 +69,28 @@ PQCLEAN_FALCON1024_CLEAN_crypto_sign_keypair(
      */
     sk[0] = 0x50 + 10;
     u = 1;
-    v = PQCLEAN_FALCON1024_CLEAN_trim_i8_encode(
-            sk + u, PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES - u,
-            f, 10, PQCLEAN_FALCON1024_CLEAN_max_fg_bits[10]);
+    v = PQCLEAN_FALCON1024_AVX2_trim_i8_encode(
+            sk + u, PQCLEAN_FALCON1024_AVX2_CRYPTO_SECRETKEYBYTES - u,
+            f, 10, PQCLEAN_FALCON1024_AVX2_max_fg_bits[10]);
     if (v == 0) {
         return -1;
     }
     u += v;
-    v = PQCLEAN_FALCON1024_CLEAN_trim_i8_encode(
-            sk + u, PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES - u,
-            g, 10, PQCLEAN_FALCON1024_CLEAN_max_fg_bits[10]);
+    v = PQCLEAN_FALCON1024_AVX2_trim_i8_encode(
+            sk + u, PQCLEAN_FALCON1024_AVX2_CRYPTO_SECRETKEYBYTES - u,
+            g, 10, PQCLEAN_FALCON1024_AVX2_max_fg_bits[10]);
     if (v == 0) {
         return -1;
     }
     u += v;
-    v = PQCLEAN_FALCON1024_CLEAN_trim_i8_encode(
-            sk + u, PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES - u,
-            F, 10, PQCLEAN_FALCON1024_CLEAN_max_FG_bits[10]);
+    v = PQCLEAN_FALCON1024_AVX2_trim_i8_encode(
+            sk + u, PQCLEAN_FALCON1024_AVX2_CRYPTO_SECRETKEYBYTES - u,
+            F, 10, PQCLEAN_FALCON1024_AVX2_max_FG_bits[10]);
     if (v == 0) {
         return -1;
     }
     u += v;
-    if (u != PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES) {
+    if (u != PQCLEAN_FALCON1024_AVX2_CRYPTO_SECRETKEYBYTES) {
         return -1;
     }
 
@@ -98,10 +98,10 @@ PQCLEAN_FALCON1024_CLEAN_crypto_sign_keypair(
      * Encode public key.
      */
     pk[0] = 0x00 + 10;
-    v = PQCLEAN_FALCON1024_CLEAN_modq_encode(
-            pk + 1, PQCLEAN_FALCON1024_CLEAN_CRYPTO_PUBLICKEYBYTES - 1,
+    v = PQCLEAN_FALCON1024_AVX2_modq_encode(
+            pk + 1, PQCLEAN_FALCON1024_AVX2_CRYPTO_PUBLICKEYBYTES - 1,
             h, 10);
-    if (v != PQCLEAN_FALCON1024_CLEAN_CRYPTO_PUBLICKEYBYTES - 1) {
+    if (v != PQCLEAN_FALCON1024_AVX2_CRYPTO_PUBLICKEYBYTES - 1) {
         return -1;
     }
 
@@ -115,10 +115,7 @@ PQCLEAN_FALCON1024_CLEAN_crypto_sign_keypair(
  * receiving the actual value length.
  *
  * If a signature could be computed but not encoded because it would
- * exceed the output buffer size, then a new signature is computed. If
- * the provided buffer size is too low, this could loop indefinitely, so
- * the caller must provide a size that can accommodate signatures with a
- * large enough probability.
+ * exceed the output buffer size, then an error is returned.
  *
  * Return value: 0 on success, -1 on error.
  */
@@ -146,31 +143,31 @@ do_sign(uint8_t *nonce, uint8_t *sigbuf, size_t *sigbuflen,
         return -1;
     }
     u = 1;
-    v = PQCLEAN_FALCON1024_CLEAN_trim_i8_decode(
-            f, 10, PQCLEAN_FALCON1024_CLEAN_max_fg_bits[10],
-            sk + u, PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES - u);
+    v = PQCLEAN_FALCON1024_AVX2_trim_i8_decode(
+            f, 10, PQCLEAN_FALCON1024_AVX2_max_fg_bits[10],
+            sk + u, PQCLEAN_FALCON1024_AVX2_CRYPTO_SECRETKEYBYTES - u);
     if (v == 0) {
         return -1;
     }
     u += v;
-    v = PQCLEAN_FALCON1024_CLEAN_trim_i8_decode(
-            g, 10, PQCLEAN_FALCON1024_CLEAN_max_fg_bits[10],
-            sk + u, PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES - u);
+    v = PQCLEAN_FALCON1024_AVX2_trim_i8_decode(
+            g, 10, PQCLEAN_FALCON1024_AVX2_max_fg_bits[10],
+            sk + u, PQCLEAN_FALCON1024_AVX2_CRYPTO_SECRETKEYBYTES - u);
     if (v == 0) {
         return -1;
     }
     u += v;
-    v = PQCLEAN_FALCON1024_CLEAN_trim_i8_decode(
-            F, 10, PQCLEAN_FALCON1024_CLEAN_max_FG_bits[10],
-            sk + u, PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES - u);
+    v = PQCLEAN_FALCON1024_AVX2_trim_i8_decode(
+            F, 10, PQCLEAN_FALCON1024_AVX2_max_FG_bits[10],
+            sk + u, PQCLEAN_FALCON1024_AVX2_CRYPTO_SECRETKEYBYTES - u);
     if (v == 0) {
         return -1;
     }
     u += v;
-    if (u != PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES) {
+    if (u != PQCLEAN_FALCON1024_AVX2_CRYPTO_SECRETKEYBYTES) {
         return -1;
     }
-    if (!PQCLEAN_FALCON1024_CLEAN_complete_private(G, f, g, F, 10, tmp.b)) {
+    if (!PQCLEAN_FALCON1024_AVX2_complete_private(G, f, g, F, 10, tmp.b)) {
         return -1;
     }
 
@@ -186,7 +183,7 @@ do_sign(uint8_t *nonce, uint8_t *sigbuf, size_t *sigbuflen,
     inner_shake256_inject(&sc, nonce, NONCELEN);
     inner_shake256_inject(&sc, m, mlen);
     inner_shake256_flip(&sc);
-    PQCLEAN_FALCON1024_CLEAN_hash_to_point_ct(&sc, r.hm, 10, tmp.b);
+    PQCLEAN_FALCON1024_AVX2_hash_to_point_ct(&sc, r.hm, 10, tmp.b);
     inner_shake256_ctx_release(&sc);
 
     /*
@@ -198,18 +195,16 @@ do_sign(uint8_t *nonce, uint8_t *sigbuf, size_t *sigbuflen,
     inner_shake256_flip(&sc);
 
     /*
-     * Compute and return the signature. This loops until a signature
-     * value is found that fits in the provided buffer.
+     * Compute and return the signature.
      */
-    for (;;) {
-        PQCLEAN_FALCON1024_CLEAN_sign_dyn(r.sig, &sc, f, g, F, G, r.hm, 10, tmp.b);
-        v = PQCLEAN_FALCON1024_CLEAN_comp_encode(sigbuf, *sigbuflen, r.sig, 10);
-        if (v != 0) {
-            inner_shake256_ctx_release(&sc);
-            *sigbuflen = v;
-            return 0;
-        }
+    PQCLEAN_FALCON1024_AVX2_sign_dyn(r.sig, &sc, f, g, F, G, r.hm, 10, tmp.b);
+    v = PQCLEAN_FALCON1024_AVX2_comp_encode(sigbuf, *sigbuflen, r.sig, 10);
+    if (v != 0) {
+        inner_shake256_ctx_release(&sc);
+        *sigbuflen = v;
+        return 0;
     }
+    return -1;
 }
 
 /*
@@ -229,6 +224,7 @@ do_verify(
     uint16_t h[1024], hm[1024];
     int16_t sig[1024];
     inner_shake256_context sc;
+    size_t v;
 
     /*
      * Decode public key.
@@ -236,12 +232,12 @@ do_verify(
     if (pk[0] != 0x00 + 10) {
         return -1;
     }
-    if (PQCLEAN_FALCON1024_CLEAN_modq_decode(h, 10,
-            pk + 1, PQCLEAN_FALCON1024_CLEAN_CRYPTO_PUBLICKEYBYTES - 1)
-            != PQCLEAN_FALCON1024_CLEAN_CRYPTO_PUBLICKEYBYTES - 1) {
+    if (PQCLEAN_FALCON1024_AVX2_modq_decode(h, 10,
+                                            pk + 1, PQCLEAN_FALCON1024_AVX2_CRYPTO_PUBLICKEYBYTES - 1)
+            != PQCLEAN_FALCON1024_AVX2_CRYPTO_PUBLICKEYBYTES - 1) {
         return -1;
     }
-    PQCLEAN_FALCON1024_CLEAN_to_ntt_monty(h, 10);
+    PQCLEAN_FALCON1024_AVX2_to_ntt_monty(h, 10);
 
     /*
      * Decode signature.
@@ -249,8 +245,21 @@ do_verify(
     if (sigbuflen == 0) {
         return -1;
     }
-    if (PQCLEAN_FALCON1024_CLEAN_comp_decode(sig, 10, sigbuf, sigbuflen) != sigbuflen) {
+
+    v = PQCLEAN_FALCON1024_AVX2_comp_decode(sig, 10, sigbuf, sigbuflen);
+    if (v == 0) {
         return -1;
+    }
+    if (v != sigbuflen) {
+        if (sigbuflen == PQCLEAN_FALCONPADDED1024_AVX2_CRYPTO_BYTES - NONCELEN - 1) {
+            while (v < sigbuflen) {
+                if (sigbuf[v++] != 0) {
+                    return -1;
+                }
+            }
+        } else {
+            return -1;
+        }
     }
 
     /*
@@ -260,13 +269,13 @@ do_verify(
     inner_shake256_inject(&sc, nonce, NONCELEN);
     inner_shake256_inject(&sc, m, mlen);
     inner_shake256_flip(&sc);
-    PQCLEAN_FALCON1024_CLEAN_hash_to_point_ct(&sc, hm, 10, tmp.b);
+    PQCLEAN_FALCON1024_AVX2_hash_to_point_ct(&sc, hm, 10, tmp.b);
     inner_shake256_ctx_release(&sc);
 
     /*
      * Verify signature.
      */
-    if (!PQCLEAN_FALCON1024_CLEAN_verify_raw(hm, sig, h, 10, tmp.b)) {
+    if (!PQCLEAN_FALCON1024_AVX2_verify_raw(hm, sig, h, 10, tmp.b)) {
         return -1;
     }
     return 0;
@@ -274,23 +283,12 @@ do_verify(
 
 /* see api.h */
 int
-PQCLEAN_FALCON1024_CLEAN_crypto_sign_signature(
+PQCLEAN_FALCON1024_AVX2_crypto_sign_signature(
     uint8_t *sig, size_t *siglen,
     const uint8_t *m, size_t mlen, const uint8_t *sk) {
-    /*
-     * The PQCLEAN_FALCON1024_CLEAN_CRYPTO_BYTES constant is used for
-     * the signed message object (as produced by crypto_sign())
-     * and includes a two-byte length value, so we take care here
-     * to only generate signatures that are two bytes shorter than
-     * the maximum. This is done to ensure that crypto_sign()
-     * and crypto_sign_signature() produce the exact same signature
-     * value, if used on the same message, with the same private key,
-     * and using the same output from randombytes() (this is for
-     * reproducibility of tests).
-     */
     size_t vlen;
 
-    vlen = PQCLEAN_FALCON1024_CLEAN_CRYPTO_BYTES - NONCELEN - 3;
+    vlen = PQCLEAN_FALCON1024_AVX2_CRYPTO_BYTES - NONCELEN - 1;
     if (do_sign(sig + 1, sig + 1 + NONCELEN, &vlen, m, mlen, sk) < 0) {
         return -1;
     }
@@ -301,7 +299,7 @@ PQCLEAN_FALCON1024_CLEAN_crypto_sign_signature(
 
 /* see api.h */
 int
-PQCLEAN_FALCON1024_CLEAN_crypto_sign_verify(
+PQCLEAN_FALCON1024_AVX2_crypto_sign_verify(
     const uint8_t *sig, size_t siglen,
     const uint8_t *m, size_t mlen, const uint8_t *pk) {
     if (siglen < 1 + NONCELEN) {
@@ -316,7 +314,7 @@ PQCLEAN_FALCON1024_CLEAN_crypto_sign_verify(
 
 /* see api.h */
 int
-PQCLEAN_FALCON1024_CLEAN_crypto_sign(
+PQCLEAN_FALCON1024_AVX2_crypto_sign(
     uint8_t *sm, size_t *smlen,
     const uint8_t *m, size_t mlen, const uint8_t *sk) {
     uint8_t *pm, *sigbuf;
@@ -329,7 +327,7 @@ PQCLEAN_FALCON1024_CLEAN_crypto_sign(
     memmove(sm + 2 + NONCELEN, m, mlen);
     pm = sm + 2 + NONCELEN;
     sigbuf = pm + 1 + mlen;
-    sigbuflen = PQCLEAN_FALCON1024_CLEAN_CRYPTO_BYTES - NONCELEN - 3;
+    sigbuflen = PQCLEAN_FALCON1024_AVX2_CRYPTO_BYTES - NONCELEN - 3;
     if (do_sign(sm + 2, sigbuf, &sigbuflen, pm, mlen, sk) < 0) {
         return -1;
     }
@@ -343,7 +341,7 @@ PQCLEAN_FALCON1024_CLEAN_crypto_sign(
 
 /* see api.h */
 int
-PQCLEAN_FALCON1024_CLEAN_crypto_sign_open(
+PQCLEAN_FALCON1024_AVX2_crypto_sign_open(
     uint8_t *m, size_t *mlen,
     const uint8_t *sm, size_t smlen, const uint8_t *pk) {
     const uint8_t *sigbuf;

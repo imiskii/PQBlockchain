@@ -18,8 +18,13 @@
 #include "HexBase.hpp"
 
 #include <cryptopp/xed25519.h>
+#include <cryptopp/eccrypto.h>
 extern "C"{
     #include <falcon1024.h>
+    #include <falcon512.h>
+    #include <dilithium5.h>
+    #include <dilithium3.h>
+    #include <dilithium2.h>
 }
 
 namespace PQB{
@@ -31,7 +36,7 @@ namespace PQB{
 class SignAlgorithm{
 public:
     /**
-     * @brief Generate new pair key pair
+     * @brief Generate new key pair
      * 
      * @param privateKey output buffer for the private key
      * @param publicKey output buffer for the public key
@@ -106,9 +111,69 @@ public:
     size_t getPublicKeySize() override { return publicKeySize; }
     size_t getSignatureSize() override { return signatureSize; }
 private:
-    static constexpr size_t privateKeySize = PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES;
-    static constexpr size_t publicKeySize = PQCLEAN_FALCON1024_CLEAN_CRYPTO_PUBLICKEYBYTES;
-    static constexpr size_t signatureSize = PQCLEAN_FALCON1024_CLEAN_CRYPTO_BYTES;
+    static constexpr size_t privateKeySize = PQCLEAN_FALCON1024_AVX2_CRYPTO_SECRETKEYBYTES;
+    static constexpr size_t publicKeySize = PQCLEAN_FALCON1024_AVX2_CRYPTO_PUBLICKEYBYTES;
+    static constexpr size_t signatureSize = PQCLEAN_FALCON1024_AVX2_CRYPTO_BYTES;
+};
+
+
+class Falcon512 : public SignAlgorithm{
+public:
+    void genKeys(PQB::byteBuffer& privateKey, PQB::byteBuffer& publicKey) override;
+    size_t sign(PQB::byteBuffer& signature, const PQB::byte* dataToSign, size_t dataSize, const PQB::byteBuffer& privateKey) override;
+    bool verify(const PQB::byteBuffer& signature, const PQB::byte* signedData, size_t dataSize, const PQB::byteBuffer& publicKey) override;
+    size_t getPrivateKeySize() override { return privateKeySize; }
+    size_t getPublicKeySize() override { return publicKeySize; }
+    size_t getSignatureSize() override { return signatureSize; }
+private:
+    static constexpr size_t privateKeySize = PQCLEAN_FALCON512_AVX2_CRYPTO_SECRETKEYBYTES;
+    static constexpr size_t publicKeySize = PQCLEAN_FALCON512_AVX2_CRYPTO_PUBLICKEYBYTES;
+    static constexpr size_t signatureSize = PQCLEAN_FALCON512_AVX2_CRYPTO_BYTES;
+};
+
+
+class Dilithium5 : public SignAlgorithm{
+public:
+    void genKeys(PQB::byteBuffer& privateKey, PQB::byteBuffer& publicKey) override;
+    size_t sign(PQB::byteBuffer& signature, const PQB::byte* dataToSign, size_t dataSize, const PQB::byteBuffer& privateKey) override;
+    bool verify(const PQB::byteBuffer& signature, const PQB::byte* signedData, size_t dataSize, const PQB::byteBuffer& publicKey) override;
+    size_t getPrivateKeySize() override { return privateKeySize; }
+    size_t getPublicKeySize() override { return publicKeySize; }
+    size_t getSignatureSize() override { return signatureSize; }
+private:
+    static constexpr size_t privateKeySize = PQCLEAN_DILITHIUM5_AVX2_CRYPTO_SECRETKEYBYTES;
+    static constexpr size_t publicKeySize = PQCLEAN_DILITHIUM5_AVX2_CRYPTO_PUBLICKEYBYTES;
+    static constexpr size_t signatureSize = PQCLEAN_DILITHIUM5_AVX2_CRYPTO_BYTES;
+};
+
+
+class Dilithium3 : public SignAlgorithm{
+public:
+    void genKeys(PQB::byteBuffer& privateKey, PQB::byteBuffer& publicKey) override;
+    size_t sign(PQB::byteBuffer& signature, const PQB::byte* dataToSign, size_t dataSize, const PQB::byteBuffer& privateKey) override;
+    bool verify(const PQB::byteBuffer& signature, const PQB::byte* signedData, size_t dataSize, const PQB::byteBuffer& publicKey) override;
+    size_t getPrivateKeySize() override { return privateKeySize; }
+    size_t getPublicKeySize() override { return publicKeySize; }
+    size_t getSignatureSize() override { return signatureSize; }
+private:
+    static constexpr size_t privateKeySize = PQCLEAN_DILITHIUM3_AVX2_CRYPTO_SECRETKEYBYTES;
+    static constexpr size_t publicKeySize = PQCLEAN_DILITHIUM3_AVX2_CRYPTO_PUBLICKEYBYTES;
+    static constexpr size_t signatureSize = PQCLEAN_DILITHIUM3_AVX2_CRYPTO_BYTES;
+};
+
+
+class Dilithium2 : public SignAlgorithm{
+public:
+    void genKeys(PQB::byteBuffer& privateKey, PQB::byteBuffer& publicKey) override;
+    size_t sign(PQB::byteBuffer& signature, const PQB::byte* dataToSign, size_t dataSize, const PQB::byteBuffer& privateKey) override;
+    bool verify(const PQB::byteBuffer& signature, const PQB::byte* signedData, size_t dataSize, const PQB::byteBuffer& publicKey) override;
+    size_t getPrivateKeySize() override { return privateKeySize; }
+    size_t getPublicKeySize() override { return publicKeySize; }
+    size_t getSignatureSize() override { return signatureSize; }
+private:
+    static constexpr size_t privateKeySize = PQCLEAN_DILITHIUM2_AVX2_CRYPTO_SECRETKEYBYTES;
+    static constexpr size_t publicKeySize = PQCLEAN_DILITHIUM2_AVX2_CRYPTO_PUBLICKEYBYTES;
+    static constexpr size_t signatureSize = PQCLEAN_DILITHIUM2_AVX2_CRYPTO_BYTES;
 };
 
 
@@ -124,6 +189,21 @@ private:
     static constexpr size_t privateKeySize = CryptoPP::ed25519PrivateKey::SECRET_KEYLENGTH;
     static constexpr size_t publicKeySize = CryptoPP::ed25519PublicKey::PUBLIC_KEYLENGTH;
     static constexpr size_t signatureSize = CryptoPP::ed25519PrivateKey::SIGNATURE_LENGTH;
+};
+
+
+class ECDSA : public SignAlgorithm{
+public:
+    void genKeys(PQB::byteBuffer& privateKey, PQB::byteBuffer& publicKey) override;
+    size_t sign(PQB::byteBuffer& signature, const PQB::byte* dataToSign, size_t dataSize, const PQB::byteBuffer& privateKey) override;
+    bool verify(const PQB::byteBuffer& signature, const PQB::byte* signedData, size_t dataSize, const PQB::byteBuffer& publicKey) override;
+    size_t getPrivateKeySize() override { return privateKeySize; }
+    size_t getPublicKeySize() override { return publicKeySize; }
+    size_t getSignatureSize() override { return signatureSize; }
+private:
+    static constexpr size_t privateKeySize = 32;
+    static constexpr size_t publicKeySize = 33;
+    static constexpr size_t signatureSize = 64; // CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA256>::Signer::MaxSignatureLength();
 };
 
 
