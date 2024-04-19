@@ -18,6 +18,9 @@ target_link_libraries(conf-generator PRIVATE CommonLib SignerLib WalletLib)
 add_executable(acc-generator acc-generator.cpp)
 target_link_libraries(acc-generator PRIVATE CommonLib AccountLib StorageLib SignerLib WalletLib)
 
+## Command Runner
+add_executable(commandRunner commandRunner.cpp)
+
 ## KEM.cpp
 add_executable(kem kem.cpp)
 target_link_libraries(kem PRIVATE kyber_1024)

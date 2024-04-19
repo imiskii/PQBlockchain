@@ -32,6 +32,9 @@ namespace PQB{
     }
 
     void ExitC::Behavior() const{
+        std::stringstream ss;
+        model->getStatistics(ss);
+        outputConsole->printToConsole(ss.str().c_str());
         outputConsole->closeConsol();
     }
 

@@ -115,6 +115,11 @@ public:
      */
     void putConnectionDataToStringStream(std::stringstream &ss);
 
+    /// @brief Give the number of bytes that were sent or received during the execution of this program
+    size_t getNumberOfProcessedBytes(){
+        return counterOfProcessedBytes_;
+    }
+
 private:
 
     MessageProcessor *messsagProcessor;
@@ -136,6 +141,8 @@ private:
     std::set<std::string> setOfConnectedPeers; ///< addresses of connected peers (use for check that just one connection with peer is kept)
 
     std::vector<socket_t> socketsToClose; ///< vector with socket IDs that should be closed
+
+    size_t counterOfProcessedBytes_; ///< the number of bytes that were sent or received during the execution of this program
 
     /**
      * @brief Initialize new Connection to peer (Create a New Connection object)

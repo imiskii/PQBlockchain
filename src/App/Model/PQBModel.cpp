@@ -120,6 +120,13 @@ namespace PQB{
         }
     }
 
+    void PQBModel::getStatistics(std::stringstream &ss){
+        ss
+        << std::endl
+        << "The program has processed (send/receive) " << connMng->getNumberOfProcessedBytes() << " of bytes in messages." << std::endl
+        << std::endl;
+    }
+
 } // namespace PQB
 
 /* END OF FILE */

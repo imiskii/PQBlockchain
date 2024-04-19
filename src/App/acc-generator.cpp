@@ -42,7 +42,7 @@ int main(){
     std::vector<std::string> files;
     std::string file;
     while (std::getline(std::cin, file)) {
-        files.push_back(file);
+        files.push_back(file.substr(0, file.find(' ')));
     }
 
     // Initialize Signer with this name of signature algorithm

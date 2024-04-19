@@ -34,8 +34,8 @@ namespace PQB{
     constexpr size_t MAX_MESSAGE_SIZE = 1400;
     /// @brief Network port for PQB server application
     constexpr size_t PQB_SERVER_PORT = 8330;
-    /// @brief Maximal number of incoming connection requests in queue for accepting 
-    constexpr size_t MAX_SERVER_QUEUE = 6;
+    /// @brief Maximal number of incoming connection requests in queue for accepting. This may be really important when createing lot of connections at once!!!
+    constexpr size_t MAX_SERVER_QUEUE = 30;
 
     /// @brief Message Version
     constexpr uint32_t MSG_VERSION = 1;

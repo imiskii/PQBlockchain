@@ -18,6 +18,7 @@ namespace PQB
 
     ConnectionManager::ConnectionManager(MessageProcessor *msgProcessor, AccountAddressStorage *addressStorage, Wallet *wallet, NodeType type)
     : messsagProcessor(msgProcessor), addrStorage(addressStorage), wallet_(wallet), localNodeType(type){
+        counterOfProcessedBytes_ = 0;
         server = new Server();
         runServer();
         connectionManagerRunFlag = true;
@@ -409,6 +410,7 @@ namespace PQB
                 return;
             } else {
                 if (msg != nullptr){
+                    counterOfProcessedBytes_ += msg->getSize(); // just for the statistics
                     messsagProcessor->processMessage(socket_fd, conn->connID, conn->isUNL, msg);
                 }
             }
@@ -420,6 +422,8 @@ namespace PQB
         while (!messageRequestQueue.empty()){
             MessageRequest_t req = messageRequestQueue.front();
             messageRequestQueue.pop();
+
+            counterOfProcessedBytes_ += req.message->getSize(); // just for the statistics
 
             switch (req.type)
             {

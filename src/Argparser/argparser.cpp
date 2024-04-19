@@ -65,6 +65,11 @@ args_t ArgParser::getArguments()
             break;
         case 's':
             if (!strcmp(optarg, "falcon1024") ||
+                !strcmp(optarg, "falcon512") ||
+                !strcmp(optarg, "dilithium5") ||
+                !strcmp(optarg, "dilithium3") ||
+                !strcmp(optarg, "dilithium2") ||
+                !strcmp(optarg, "ecdsa") ||
                 !strcmp(optarg, "ed25519")){
                     args.signature_alg = optarg;
             } else {

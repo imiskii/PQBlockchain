@@ -7,9 +7,14 @@
 IMAGE_NAME="pqb_image"
 
 
-
-# Clear configuration files
+# Clean configuration files
 rm -rf scripts/confs/
+
+# Clean Commands
+rm scripts/commands.txt
+
+# Clean compose.yaml
+rm -f scripts/compose.yaml
 
 # Delete containers
 docker rm -f $(docker ps -aq)

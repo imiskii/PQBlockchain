@@ -74,6 +74,10 @@ public:
     /// @param id if there are some specific data then this will be identifier of that data 
     void getDataToPrint(std::stringstream &ss, PrintData whatData, std::string id = "");
 
+    /// @brief Get current program statistics
+    /// @param ss [out] string stream that will be filled with formated program statistics
+    void getStatistics(std::stringstream &ss);
+
 };
 
 

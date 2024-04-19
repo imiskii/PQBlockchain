@@ -37,7 +37,7 @@
 #include "Signer.hpp"
 #include "Log.hpp"
 
-/// @brief Function for parsing liny by space to a vector
+/// @brief Function for parsing line by space to a vector
 std::vector<std::string> parseLine(std::string &line){
     std::vector<std::string> parsedLine;
     size_t start = 0, end = 0;
@@ -79,12 +79,13 @@ int main(int argc, char *argv[]){
     // Iterate lines on stdin initialize empty conf*.json files in tmp/confs/ directory
     while (std::getline(std::cin, line)) {
         std::string spec_file_path = file_path + "conf" + std::to_string(line_count) + ".json";
-        conf << spec_file_path << std::endl;
         lines.push_back(line);
         PQB::Wallet *wallet = new PQB::Wallet(spec_file_path);
         wallet->loadConfigurationFromFile(); 
         wallets.push_back(wallet);
         line_count++;
+
+        conf << spec_file_path << " " << wallet->getWalletID().getHex() << std::endl;
     }
 
     conf.close();

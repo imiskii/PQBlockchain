@@ -142,7 +142,7 @@ struct TransactionPtrComparator{
 struct TransactionPtrOrder{
     bool operator()(const TransactionPtr& a, const TransactionPtr& b) const{
         if (a->senderWalletAddress == b->senderWalletAddress){
-            return a->sequenceNumber > b->sequenceNumber;
+            return a->sequenceNumber < b->sequenceNumber;
         }
         return a->senderWalletAddress < b->senderWalletAddress;
     }
