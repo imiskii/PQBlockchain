@@ -67,6 +67,12 @@ public:
         Message *message;        ///< Message to sent
     };
 
+    struct MessageRequestComparator {
+        bool operator()(const MessageRequest_t &a, const MessageRequest_t &b) const {
+            return a.message->getType() < b.message->getType();
+        }
+    };
+
     /// @brief Datatype representing a connection request. Connection requests are mode for ConnectionManager that will try to initialize this connections.
     struct ConnectionRequest_t{
         std::string peerID; ///< wallet ID of peer
@@ -128,9 +134,9 @@ private:
     NodeType localNodeType; ///< Type of node running this ConnectionManager
     Server *server; ///< Instance of a PQB server
 
-    std::queue<ConnectionRequest_t> connectionRequestQueue; ///< queue with requests for connection
+    std::queue<ConnectionRequest_t> connectionRequestQueue; ///< queue with requests for creating new connections
     std::mutex connectionRequestQueueMutex;
-    std::queue<MessageRequest_t> messageRequestQueue; ///< queue with requests for ConnectionManager
+    std::priority_queue<MessageRequest_t, std::vector<MessageRequest_t>, MessageRequestComparator> messageRequestQueue; ///< queue with requests for messages to send
     std::mutex messageRequestQueueMutex;
 
     std::jthread connectionManagerThread;

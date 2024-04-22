@@ -31,7 +31,7 @@ def generate_commands(config_file, command_script):
                 # Add only if the receiver is in configuration
                 if (rec_node_num - 1) < len(nodes):
                     commands += (split[0]  + " " + split[1] + " " + split[2] + " " + nodes[(rec_node_num - 1)] + "\n")
-            elif split[1] == "exit":
+            elif split[1] == "exit" or split[1] == "chain" or split[1] == "accs":
                 commands += cmd
                 if idx == len(lines):
                     commands += "\n"
@@ -44,7 +44,7 @@ def generate_commands(config_file, command_script):
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: python script.py <node_configuration.txt> <command_script.txt>")
+        print("Usage: python commandGenerator.py <node_configuration.txt> <command_script.txt>")
         sys.exit(1)
 
     config_file = sys.argv[1]

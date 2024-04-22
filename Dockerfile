@@ -1,8 +1,9 @@
 FROM ubuntu:22.04
 
-RUN  apt-get -y update && apt-get -y upgrade
+RUN apt-get -y update
+RUN apt-get -y upgrade
 RUN apt-get install -y valgrind
-RUN apt-get install -y linux-tools-6.5.0-27-generic
+RUN apt-get install -y linux-tools-6.5.0-28-generic
 RUN mkdir /PQB
 RUN mkdir /PQB/tmp
 RUN mkdir /PQB/tmp/confs

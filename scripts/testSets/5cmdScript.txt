@@ -1,0 +1,132 @@
+sleep 10000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 5000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 10000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 2000
+node1 createTx 10 node2
+node2 createTx 10 node3
+node3 createTx 10 node4
+node4 createTx 10 node5
+node5 createTx 10 node1
+sleep 30000
+node1 chain
+node2 chain
+node3 chain
+node4 chain
+node5 chain
+node1 accs
+node1 exit
+node2 exit
+node3 exit
+node4 exit
+node5 exit

@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::string node_name = argv[2];    // second argument should be name of a node
-    int default_delay = 500;            // default delay is 500ms
+    int default_delay = 700;            // default delay for node's commands to give it same to for processing
 
     // Open file with commands
     std::ifstream file(argv[1]);

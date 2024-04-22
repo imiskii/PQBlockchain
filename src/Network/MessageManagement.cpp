@@ -35,7 +35,7 @@ namespace PQB
         }
         // Delete all messages in message requests
         while (!messageRequestQueue.empty()){
-            MessageRequest_t req = messageRequestQueue.front();
+            MessageRequest_t req = messageRequestQueue.top();
             delete req.message;
             messageRequestQueue.pop();
         }
@@ -81,7 +81,7 @@ namespace PQB
             // they send VERSION message to each other and they are both waiting for ACK message.
             if (wallet_->getWalletID().getHex() > peerID){ // If local wallet ID > peer ID, delete new connection and keep existing connection
                 socketsToClose.push_back(connectionID);
-                PQB_LOG_INFO("CONNECTION MANAGER", "Duplicti connection with {} peer connection will be closed", shortStr(peerID));
+                PQB_LOG_INFO("CONNECTION MANAGER", "Duplicit connection with {} peer connection will be closed", shortStr(peerID));
                 return;
             } else { // Delete existing connection and keep this connection
                 Connection *exConn= getConnectionFromConnectionPool(peerID);
@@ -92,7 +92,7 @@ namespace PQB
                 std::string newId = peerID.substr(64);
                 updatePeerIdOfConnectionInConnectionPool(exConn->getConnectionSocketFD(), peerID, newId);
                 socketsToClose.push_back(exConn->getConnectionSocketFD());
-                PQB_LOG_INFO("CONNECTION MANAGER", "Duplicti connection with {} our connection will be closed", shortStr(peerID));
+                PQB_LOG_INFO("CONNECTION MANAGER", "Duplicit connection with {} our connection will be closed", shortStr(peerID));
             }
         }
         // Check for UNL connections
@@ -420,7 +420,7 @@ namespace PQB
     void ConnectionManager::processMessageQueueRequests(){
         std::lock_guard<std::mutex> lock(messageRequestQueueMutex);
         while (!messageRequestQueue.empty()){
-            MessageRequest_t req = messageRequestQueue.front();
+            MessageRequest_t req = messageRequestQueue.top();
             messageRequestQueue.pop();
 
             counterOfProcessedBytes_ += req.message->getSize(); // just for the statistics
@@ -644,8 +644,9 @@ namespace PQB
         if (msg != nullptr){
             TransactionPtr msgData = std::make_shared<Transaction>();
             msg->deserialize(msgData.get());
+            waitingData.erase(msgData->IDHash); // if it is waiting list, then remove it
             if (checkTransaction(msgData)){
-                if (consensus->addTransactionToPool(msgData) && !waitingData.erase(msgData->IDHash)){ // If not yet processed
+                if (consensus->addTransactionToPool(msgData)){ // If not processed yet
                     forwardInvMessage(msgData->IDHash, InvType::TX, msgi);
                 }
             }
@@ -684,10 +685,7 @@ namespace PQB
                             // Insert it to newSet and transaction pool, if it is on waiting list remove it
                             newSet.insert(tx);
                             consensus->addTransactionToPool(tx);
-                            auto wit = waitingData.find(tx->IDHash);
-                            if (wit != waitingData.end()){
-                                waitingData.erase(wit);
-                            }
+                            waitingData.erase(tx->IDHash);
                         }
                     }
                 }
@@ -760,12 +758,17 @@ namespace PQB
                 default:
                     break;
                 }
+
                 if (ret){
                     getDataInventories.push_back(inv);
+                    // This may cause a problems, because the node is propagating INVENTORY of a message that he do not has yet.
+                    // Let INVENTORY propagation on time when the node receive a massage with data, check it and then propagate.
+                    /*
                     // forvard message if we do not have it and it is not a block inv., this ensure that messages will be forwarded only once
                     if (inv.requestType != InvType::BLOCK){
                         forwardInvMessage(inv, msgi);
                     }
+                    */
                 }
             }
             if (!getDataInventories.empty()){
