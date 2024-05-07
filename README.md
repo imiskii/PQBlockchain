@@ -49,7 +49,7 @@ The application was tested on Linux Ubuntu 22.04
 |**Command** | **Action**|
 |---|---|
 | _setup_ | Create `tmp` and build `directories` |
-| _make_ | Do configuration and compilation (might be required to be run twice) |
+| _make_ | Configure and compile (might be required to be run twice) |
 | _configure_ | Generate CMake configuration (might be required to be run twice) |
 | _compile_ | Compile the project and external libraries |
 | _run_ | Run the main application. Requires arguments for the program `make run ARGS=<program_arguments>` |
@@ -59,7 +59,7 @@ The application was tested on Linux Ubuntu 22.04
 | _cleanall_ | Remove whole build and generate temporary files |
 | _doc_ | Generates Doxygen documentation |
 
-### Compile
+### Compilation
 
 For configuration and compilation run: `make` (It is possible that the first run of `make` will fail. In that case, it is necessary to run the `make` command again a second time.)
 
@@ -74,7 +74,7 @@ There is one required argument:
 
 + `-s/--sig <signature_algorithm>` - Name of the signature algorithm to use. There are implemented algorithms: falcon512, falcon1024, dilithium2, dilithium3, dilithium5, ed25519 and ecdsa.
 
-Only one optional argument is:
+and one optional argument is:
 
 + `-c/--conf <path_to_wallet_configuration_file>` - Select the wallet configuration file. If not used, the default path is in the local directory `tmp/conf.json`.
 
