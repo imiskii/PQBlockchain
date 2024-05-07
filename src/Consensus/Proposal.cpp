@@ -168,7 +168,7 @@ namespace PQB{
 
     void TxSetProposal::deserialize(const byteBuffer &buffer, size_t &offset){
         if ((buffer.size() - offset) < (sizeof(typeOfProposal) + sizeof(seq) + sizeof(time) + sizeof(issuer) + sizeof(TxSetId) + sizeof(previousBlockId) + sizeof(signatureSize)))
-            throw PQB::Exceptions::Transaction("Deserialization: buffer has not enough size to deserialize the proposal");
+            throw PQB::Exceptions::Proposal("Deserialization: buffer has not enough size to deserialize the proposal");
         deserializeField(buffer, offset, typeOfProposal);
         deserializeField(buffer, offset, seq);
         deserializeField(buffer, offset, time);
@@ -177,7 +177,7 @@ namespace PQB{
         deserializeField(buffer, offset, previousBlockId);
         deserializeField(buffer, offset, signatureSize);
         if ((buffer.size() - offset) < signatureSize)
-            throw PQB::Exceptions::Transaction("Deserialization: buffer has not enough size to deserialize the proposal");
+            throw PQB::Exceptions::Proposal("Deserialization: buffer has not enough size to deserialize the proposal");
         signature.resize(signatureSize);
         std::memcpy(signature.data(), buffer.data() + offset, signatureSize);
         offset += signatureSize;
@@ -186,7 +186,7 @@ namespace PQB{
 
     void TxSetProposal::deserializeExceptTxSet(const byteBuffer &buffer, size_t &offset){
         if ((buffer.size() - offset) < (sizeof(typeOfProposal) + sizeof(seq) + sizeof(time) + sizeof(issuer) + sizeof(TxSetId) + sizeof(previousBlockId) + sizeof(signatureSize)))
-            throw PQB::Exceptions::Transaction("Deserialization: buffer has not enough size to deserialize the proposal");
+            throw PQB::Exceptions::Proposal("Deserialization: buffer has not enough size to deserialize the proposal");
         deserializeField(buffer, offset, typeOfProposal);
         deserializeField(buffer, offset, seq);
         deserializeField(buffer, offset, time);
@@ -195,7 +195,7 @@ namespace PQB{
         deserializeField(buffer, offset, previousBlockId);
         deserializeField(buffer, offset, signatureSize);
         if ((buffer.size() - offset) < signatureSize)
-            throw PQB::Exceptions::Transaction("Deserialization: buffer has not enough size to deserialize the proposal");
+            throw PQB::Exceptions::Proposal("Deserialization: buffer has not enough size to deserialize the proposal");
         signature.resize(signatureSize);
         std::memcpy(signature.data(), buffer.data() + offset, signatureSize);
         offset += signatureSize;

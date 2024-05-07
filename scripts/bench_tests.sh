@@ -81,20 +81,20 @@ testAlg()
 }
 
 # Set up folders
-#mkdir $FPTO
-#mkdir $FPTO/falcon1024
-#mkdir $FPTO/falcon512
-#mkdir $FPTO/dilithium5
-#mkdir $FPTO/dilithium3
-#mkdir $FPTO/dilithium2
-#mkdir $FPTO/ed25519
-#mkdir $FPTO/ecdsa
+mkdir $FPTO
+mkdir $FPTO/falcon1024
+mkdir $FPTO/falcon512
+mkdir $FPTO/dilithium5
+mkdir $FPTO/dilithium3
+mkdir $FPTO/dilithium2
+mkdir $FPTO/ed25519
+mkdir $FPTO/ecdsa
 
 # Run tests
 testAlg falcon1024
 testAlg falcon512
 testAlg dilithium5
-#testAlg dilithium3
-#testAlg dilithium2
-#testAlg ed25519
-#testAlg ecdsa
+testAlg dilithium3
+testAlg dilithium2
+testAlg ed25519
+testAlg ecdsa

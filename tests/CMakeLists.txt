@@ -41,7 +41,6 @@ endmacro()
 if(BUILD_TESTING)
     enable_testing()
     include(GoogleTest)
-    package_add_test(Example example.cpp "" "${PROJECT_DIR}")
 
     # Signer
     package_add_test(Falcon1024Sign Signer/falcon1024.cpp "SignerLib;CommonLib" "${PROJECT_DIR}")
@@ -51,8 +50,29 @@ if(BUILD_TESTING)
     package_add_test(Dilithium2Sign Signer/dilithium2.cpp "SignerLib;CommonLib" "${PROJECT_DIR}")
     package_add_test(Ed25519Sign Signer/ed25519.cpp "SignerLib;CommonLib" "${PROJECT_DIR}")
     package_add_test(ECDSASign Signer/ecdsa.cpp "SignerLib;CommonLib" "${PROJECT_DIR}")
+    
+    # Common
+    package_add_test(Blob Common/Blob.cpp "CommonLib" "${PROJECT_DIR}")
+    package_add_test(HexBase Common/HexBase.cpp "CommonLib" "${PROJECT_DIR}")
+    package_add_test(Serialize Common/Serialize.cpp "CommonLib;BasisLib" "${PROJECT_DIR}")
+    # Hash Manager
+    package_add_test(HashManager HashManager/HashManager.cpp "HashManagerLib" "${PROJECT_DIR}")
 
-    # ...
+    # Merkle Tree
+    package_add_test(MerkleRoot MerkleTree/MerkleRootCompute.cpp "MerkleTreeHashLib" "${PROJECT_DIR}")
+
+    # Structures
+    package_add_test(Transaction Structures/Transaction.cpp "LedgerLib" "${PROJECT_DIR}")
+    package_add_test(Block Structures/Block.cpp "LedgerLib" "${PROJECT_DIR}")
+    package_add_test(Account Structures/Account.cpp "AccountLib" "${PROJECT_DIR}")
+    package_add_test(Proposal Structures/Proposal.cpp "ConsensusLib" "${PROJECT_DIR}")
+
+    # Storage
+    package_add_test(AccountStorage Storage/AccountStorage.cpp "StorageLib" "${PROJECT_SOURCE_DIR}")
+    package_add_test(BlockStorage Storage/BlocksStorage.cpp "StorageLib" "${PROJECT_SOURCE_DIR}")
+
+    # Wallet
+    package_add_test(Wallet Wallet/Wallet.cpp "WalletLib;BasisLib" "${PROJECT_SOURCE_DIR}")
 
 endif()
 

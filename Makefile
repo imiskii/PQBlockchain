@@ -42,14 +42,14 @@ genconfs:
 ##################################################################
 
 ##
-# RUN TEST/ALLTESTS
+# RUN TEST/ALLTESTS (has to ne -j1 because of Storage tests)
 
 test:
-	GTEST_COLOR=1 ctest -R $(ARGS) --test-dir build --output-on-failure -j12
+	GTEST_COLOR=1 ctest -R $(ARGS) --test-dir build --output-on-failure -j1
 
 
 alltests:
-	GTEST_COLOR=1 ctest --test-dir build/tests --output-on-failure -j12
+	GTEST_COLOR=1 ctest --test-dir build/tests --output-on-failure -j1
 
 
 ##################################################################
