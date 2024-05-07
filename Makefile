@@ -125,5 +125,5 @@ doc:
 	doxygen $(DOXYGEN)/Doxyfile
 
 
-docopen: doc
+opendoc: doc
 	firefox $(DOXYGEN)/html/index.html
