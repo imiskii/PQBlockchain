@@ -13,9 +13,27 @@ PROJECT=PQBlockchain
 # EXECUTABLES NAMES
 EX=./build/src/App/pqb
 # REMOVE
-RM=$(DOXYGEN)/html *.zip build/*
+RM=$(DOXYGEN)/html *.zip
+# Temporary configuration folder
+TMP=tmp
 
-.PHONY: clean pack doc opendoc configure compile run
+.PHONY: clean pack doc opendoc configure configureg compile run
+
+all:
+	make configure
+	make compile
+
+
+##################################################################
+
+##
+# SET UP
+
+setup:
+	mkdir $(TMP)
+	mkdir build
+
+##################################################################
 
 ##
 # MAKE & RUN
@@ -32,23 +50,16 @@ compile:
 run:
 	$(EX) $(ARGS)
 
-# generate configuration files in scripts/confs with txt file in scripts/confs.txt. Require one program argument, which is the name of signature algorith
-genconfs:
-	./build/src/App/conf-generator $(ARGS)
-	rm -rf scripts/confs/
-	mv tmp/confs scripts/confs
-	mkdir tmp/confs
-
 ##################################################################
 
 ##
-# RUN TEST/ALLTESTS (has to ne -j1 because of Storage tests)
+# RUN TEST/ALLTESTS (has to ne -j1 because of Storage and Wallet tests)
 
 test:
 	GTEST_COLOR=1 ctest -R $(ARGS) --test-dir build --output-on-failure -j1
 
 
-alltests:
+testall:
 	GTEST_COLOR=1 ctest --test-dir build/tests --output-on-failure -j1
 
 
@@ -65,10 +76,11 @@ dimagec:
 dimager:
 	docker rmi pqb_image
 
-# Compose docker containers. Requires one argument and it is the file which .yaml (docker-compose) should it use
+# Compose docker containers. Requires one argument and it is the .yaml file which docker-compose should use to compose containers
 dcomposeup:
 	docker-compose -f $(ARGS) up --rm
 
+# Delete created containers
 drm:
 	docker rm -f $$(sudo docker ps -aq)
 
@@ -83,10 +95,18 @@ dlog:
 ##################################################################
 
 ##
-# CLEN
+# CLEAN
 
+# Clean just temorary file creted by application
 clean:
+	rm -rf $(TMP)/*
 	rm -rf $(RM)
+
+# Clean whole build and all generated files
+cleanall:
+	make clean
+	rm -rf build/*
+
 
 ##################################################################
 
@@ -105,5 +125,5 @@ doc:
 	doxygen $(DOXYGEN)/Doxyfile
 
 
-opendoc: doc
+docopen: doc
 	firefox $(DOXYGEN)/html/index.html

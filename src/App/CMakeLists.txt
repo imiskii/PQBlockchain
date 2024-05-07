@@ -20,18 +20,3 @@ target_link_libraries(acc-generator PRIVATE CommonLib AccountLib StorageLib Sign
 
 ## Command Runner
 add_executable(commandRunner commandRunner.cpp)
-
-## KEM.cpp
-add_executable(kem kem.cpp)
-target_link_libraries(kem PRIVATE kyber_1024)
-
-
-## SIG.cpp
-add_executable(sig sig.cpp)
-target_link_libraries(sig PRIVATE falcon_1024 CommonLib SignerLib)
-
-
-## TMP.cpp
-add_executable(tmp tmp.cpp)
-target_link_libraries(tmp PRIVATE CommonLib HashManagerLib SerLib LedgerLib MerkleTreeHashLib SignerLib StorageLib WalletLib AccountLib ConsensusLib ChainLib)
-

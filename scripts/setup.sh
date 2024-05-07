@@ -3,8 +3,6 @@
 # Author: Michal Ľaš
 # Date: 08.04.2024
 
-# TODO: YAML file genarator for algorithm setup
-
 
 printHelp()
 {
@@ -32,10 +30,10 @@ DOCKER_COMPOSE_YAML="scripts/compose.yaml"
 
 
 # Make configuration files
+mkdir tmp/confs
 ./build/src/App/conf-generator $ALGORITHM_NAME < $CONFIG_SOURCE
 rm -rf scripts/confs/
 mv tmp/confs scripts/confs
-mkdir tmp/confs
 
 # Generate command script
 rm scripts/commands.txt
