@@ -1,0 +1,291 @@
+%%%%%%%%                        01 - Motivace                       %%%%%%%%
+%---------------------------------------------------------------------------
+% Při prezentování nejvíc záleží na začátku. 
+% Pro získání pozornosti na začátku veřejné řeči se doporučuje: říct nějakou statistiku; položit otázku (u státnic spíše řečnickou).
+
+
+
+% <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< %
+% TODO: otázka/štatistika
+
+% Tips:
+% 1. Novinky o kvantových počítačoch neajký pekný údaj. Nové kvantové PC, aký je ich výkon? Aké sú plány a vývoj?
+% 2. "Bitcoin je momentálne celkom drahý. Cena okolo ... . Uvidíme či mu to vydrží aj po príchode kvantových počítačov."
+% 3. Vyšli už nové štandardy od NIST? Aký je stav?
+
+% Matoušek nemá moc rád bezpečnosť :) možno taktiež hodiť poznámku k tomu, že vývojari kvantových počítačov už 10 rokov hovoria, že budú moť dostatnočne výkonný počítač na prelomenie RSA.
+% <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< %
+
+
+%---------------------------------------------------------------------------
+
+% - Uveďte posluchače do tématu své práce.
+% - Řekněte něco málo o stavu před zahájením práce a jaké byly důvody pro její vypracování.
+% - Nejlepší je vysvětlit motivaci pomocí schématu. Pokud musíte použít odrážky, tak super-stručné, abyste je nečetli, ale ony pouze tvořily kostru sdělení.
+
+% Z této části prezentace musí posluchači dostat stručné a výstižné odpovědi na otázky:
+%  A) Proč děláte, co děláte? K čemu je to dobré?
+%  B) Co je cílem práce? Co má být výsledkem?
+
+% Odolejte pokušení říkat banality a všeobecně známé informace.
+% "Žijeme v době rozvoje mobilní výpočetní techniky, kdy každý má v kapse mobil" - je dokonale prázdné a hloupé sdělení, nic takového neříkejte, fakt to nikoho nezajímá.
+
+
+% <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< %
+% 1. Nejaký pekný obrázok: blockchain + kvantový počítač + hrozba
+% 2. Prečo?: Kvantové počítače predstavujú nové hrozby pre kryptografiu na ktorej je technológia blockchain kriticky závislá. Preto je doležité adaptovať blockchain na nové hrozby ktoré kvantové počítače predstavujú.
+% 3. Cieľ: Cieľom je teda identifikovať hrozby pre blockchainy, teda analyzovať zraniteľné časti blockchainu voči schopnostiam kvantových počítačov. Analyzovať vhodné PQ algoritmy pre blockchain a porovnať výkonnosť PQ algoritmu a súčasných v blockchaine (pripadne porovnať samotné blockchainy)
+% - ciele možno napísať v odrážkach na ďalší slide, nech majú samostatný priestor
+
+% Prečo?: Kvantové počítače predstavujú nové hrozby pre kryptografiu na ktorej je technológia blockchain kriticky závislá. Preto je doležité adaptovať blockchain na nové hrozby ktoré kvantové počítače predstavujú.
+
+% Obsah: Logicky by sa moja práca dala rozdeliť na dve časti - blockchain a post kvantová kryptografia. Spojením týchto dvoch častí by mal vzdniknúť PQ blockchain - Výsledkom by mal byť PQ blockchain. TO VŠAK NESTAČÍ. Okrem praktickej implementáciu PQ algoritmov sa treba pozerať aj na ďalšie aspekty blockchainu, ktoré môžu byť ohrozené schopnosťami kvantových počítačov. 
+% [click to add something to slide]
+% Charakteristockou súčasťou pre blockchainy je konsenzus mechanizmus, ktorý taktiež môže byť v mnohých prípadoch zraniteľný. [budem o tom viac rozprávať]
+
+% Cieľ: Cieľom je teda identifikovať hrozby pre blockchainy, teda analyzovať zraniteľné časti blockchainu voči schopnostiam kvantových počítačov. Analyzovať vhodné PQ algoritmy pre blockchain a porovnať výkonnosť PQ algoritmu a súčasných v blockchaine (pripadne porovnať samotné blockchainy).
+
+% <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< %
+
+
+\begin{frame}
+  \frametitle{Motivácia}
+  \begin{columns}
+    \column{0.4\textwidth}
+    \begin{itemize}
+        \item \emph{Vstupy} či stav \emph{před}
+        \item Co mají být \emph{výstupy}
+        \item Odrážky \emph{žádné} nebo aspoň \emph{stručné}!
+        \item Žádoucí: Schéma se vstupy a výstupy
+    \end{itemize}
+     
+    \column{0.6\textwidth}
+    \includegraphics[width=\textwidth]{img/template-Teaser.pdf}
+  \end{columns}
+\end{frame}
+
+
+%%%%%%%%                       02 - Cíle práce                      %%%%%%%%
+%---------------------------------------------------------------------------
+% Stručně uveďte cíle Vaší práce.
+% Vhodné jsou max. 3 odrážky/věty s hlavními cíli.
+
+% Někdy je motivace totožná s formulací cílů. Nenuťte se do dvou slajdů, když je správnější myšlenku vyjádřit jedním... 
+
+% Formulujte, co je cílem:
+%  - Jak se pozná úspěšný výsledek?
+%  - Co jsou výstupy?
+%  - Jaké vlastnosti má mít úspěšný výsledek?
+%  - Kde to půjde použít?
+
+% Lepší je bez použití odrážek:
+%  - mít dostatečně dobrý obrázek, který budete svými slovy komentovat 
+%  - na obrázku je vizuální sdělení, sdělení slovní dodáte pusou
+
+% Je zbytečné říkat generická a obecná tvrzení: "Řešení by mělo být rychlé, spolehlivé a robustní" - toto jsou obecné požadavky na cokoli a informační hodnota sdělení je NULA - je to jen plýtvání časem a inteligencí.
+% Mluvte konkrétně: Jaké konkrétní vlastnosti má mít Vaše řešení, co konkrétně znamená "robustní", co konkrétně znamená "spolehlivé"?
+
+
+
+% <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< %
+% TU BUDE NIČ - povedané na predchádzajúcom snímku
+% <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< %
+
+
+
+%\begin{frame}
+%  \frametitle{Cíle práce}
+%  \begin{columns}
+%    \column{0.4\textwidth}
+%    \begin{itemize}
+%        \item \emph{Vstup}
+%        \item \emph{Výstup}
+%        \item Žádoucí \emph{vlastnosti}
+%        \item Využití \& aplikace
+%    \end{itemize}
+%     
+%    \column{0.6\textwidth}
+%        \includegraphics[width=\textwidth]{img/template-Goal.pdf}
+%  \end{columns}
+%\end{frame}
+
+
+%%%%%%%%                  03 - Informace o řešení                   %%%%%%%%
+%---------------------------------------------------------------------------
+% Cílem  obhajoby je podat zprávu o stavu projektu, nikoliv tedy držet přednášku na zadané téma. Mluvte o tom, co vy jste udělali, jaké jsou vaše výsledky. Mějte na slajdech formální pojmy, buďte přesní, definujte a odkazujte se.
+
+% Prezentace nemusí a vlastně nemá obsahovat:
+% -- Výklad použitých algoritmů apod. To patří do přednášky na dané téma, v prezentaci o stavu jen známé algoritmy uveďte podle jména, neznámé algoritmy třeba trochu přibližte, aby bylo zřejmo, o co jde, ale nevysvětlujte je podrobně. Není cílem, aby vaši posluchači algoritmu rozuměli a dokázali ho naprogramovat, ale aby měli představu, na čem pracujete a jak se vám to daří.
+% -- Podrobnosti návrhu vašeho systému. Opět, posluchači nebudou váš systém hackovat, nepotřebují detailní strukturu tříd, názvy funkcí, jména souborů, datové formáty apod. Tyto věci uvádějte pouze v takové míře, která pomůže posluchačům udělat si představu, na čem pracujete a jak se vám to daří.
+
+% HEROUT, Adam. Prezentování. Herout.net: Poznámky učitele, kouče, čtenáře. [online]. [cit. 2021-9-15]. Dostupné z: https://www.herout.net/blog/category/prezentovani/
+%---------------------------------------------------------------------------
+
+% - Uveďte, jaké zajímavé problémy jste v práci řešili.
+% - Mělo by z toho být patrné, že je to závěrečná práce -- ne jen další projekt do předmětu -- tedy je v tom něco netriviálního, zajímavého a přínosného.
+% - Raději dva nebo tři slajdy, které ukážete/vysvětlíte během 20 vteřin, než se snažit všechno "namastit" na jeden slajd.
+% - Na slajdy je dobré dát vizuální informaci: vzorce, schemata, obrázky, diagramy. Slovní informaci můžete předat pusou. Je dokonale zbytečné a otravné mít na slajdu v odrážkách to samé, co se chystáte říct.
+% - Titulek slajdu "Podstatné informace o řešení" je hodně generický. Ve skutečné Vaší prezentaci bude daleko lepší použít specifický titulek na každém ze slajdů, například: "Schéma neuronové sítě pro detekci frňáků", "Návrh nekonečného automatu", "Vytvořená datová sada" apod.
+
+
+% <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< %
+% 1. [Obr. 5.1] Návrh PQ blockchainu (high level view). Čo vlastne idem zabezpečovať? Aké sú hrozby? Čo som analyzoval? Aké algoritmy som vybral?
+
+% Teraz ktým kritickým častiam blockchainu, ktoré som analyzoval ako zraniteľné voči kvantovým útokom a rozhodol som sa ich zabezpečiť. Chain of blockks, konsenzus mechanizmus, digitálne podpisy transakcií + šifrovanie BC komunikácie. Zo symetrickej kryptografie je dôležité používať hešovacie funkcie s dostatočným dĺžkov výstupu. Ja som sa rozhodol použiť SHA-512 aj keď podľa NÚKIB stačí SHA-386. Pre simetrické šifrovanie sa odporúča použiť dostatočne dlhý kľúč s 256+ bit odporúča sa AES-256. Asymetrickú kryptografiu môžeme rozdeliť na dva časti: digitálne podpisy a KEM. Tu je nutné použiť nové algoritmy práve zo súťaže NIST. Ja som sa rozhodol pre finalistov súťaže pre kategórie digitálnych podpisov sú to Falcon a Dilithium, SPHINCS+ je podľa mňa nepoužiteľný v blockchainoch, pre kategórie KEM som vybral jediný algoritmus pre ktorý výjde aj štandard a to algoritmus Kyber.
+
+% 2. [Obr. 5.3] Implementácie. Ako vyzerá jeden node? Aké technológie som použil? Prečo som ich použil? Čo som abstrahoval (Moc sa tomu nevenovať. radšej hovoriť o tom čo som urobil ako neurobil.)? Popísať schému. Značný čas som strávil pri implementáciu P2P komunikácie. Zamerať sa na zaujímavosti a problémy, ktoré som riešil.
+
+% Tento obrázok ukazuje komponenty jedného uzla a komunikáciu medzi týmito komponentami. Najväčšiu časť som strávil na tom ako vlastne pochopiť blockchain, keďže to pre mňa bola nová technológia a nevedel som akoby to malo správne fungovať. Koncept je jednoduchý, avšak praktická bola pre mňa celkom náročná. Najviac času som strávil hlavne pri vytváraní protokolu a P2P komunikácie. Storage je implementovaný ako LevelDB databáza, čo je embeded key value databáza a sú v nej uložené bloky, a účty (jedná sa o account base účet).
+
+%  Abstrahoval som hlavne synchronizačné prvky...
+
+% 3. Signer (veľmi krátko alebo možno ani nie)
+
+% <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< %
+
+
+\begin{frame}
+  \frametitle{Podstatné informace o řešení}
+  \centering\includegraphics[width=0.8\textwidth]{img/template-Schema.pdf}
+  \begin{equation}
+      \mathbf{a}_t = \sum_{i=1}^{L}\alpha_{t,i}\mathbf{f}_{t,i}^{*}
+  \end{equation}
+  kde $\alpha_{t,i}$ počítá \emph{softmax}:
+  \begin{align}
+      \alpha_{t,i} &= \frac{\exp(r_{t,i})}{\sum_{k=1}{L}\exp(r_{t,k})} 
+      \\
+      r_{t,i} &= W^a \tanh\left( W^h \mathbf{h}_{t-1} + W^f\mathbf{f}_{t,i}^{*} + b \right)
+  \end{align}
+\end{frame}
+
+\begin{frame}\frametitle{Podstatné informace o řešení}
+  \makebox[\linewidth]{\includegraphics[width=\paperwidth]{img/template-Screenshot.png}}
+\end{frame}
+
+
+%%%%%%%%                    04 - Výsledky práce                     %%%%%%%%
+%---------------------------------------------------------------------------
+% Shrňte, jakých výsledků se Vám podařilo dosáhnout.
+% Uveďte, jakým způsobem byla vyhodnocena funkčnost a správnost řešení.
+% Buďte konkrétní: místo "Aplikace je otestovaná", řekněte, kým a jak byla testována, jaké byly výsledky testů.
+% Místo "Úspěšnost detektoru je hodně dobrá" řekněte "Úspěšnost detektoru je 93 % mAP" nebo ještě radši ukažte tabulku se srovnáním oproti alternativním řešením.
+% Pokud vyhodnocení sestávalo ze dvou nebo tří částí, může být vhodné rozdělit obsah na dva či tři slajdy. Při prezentování je ovšem potřeba se pohlídat, aby čas věnovaný každému slajdu byl adekvátně krátký a nedošlo k přetažení času.
+
+
+% <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< %
+% 1. [Obr. screen z testovanie/screeny] Čo som testoval? Ako som testoval?
+
+% Testoval som algoritmy Falcon a Dilithium vo všetkých ich bezpečnostných úrovniach a porovnával som ich so súčasne používanými algoritmami ECDSA a Ed25519. Sledoval som 3 metriky. Množstvo procesorových cyklov, ktoré vykonal procesor pri jednotlivých algoritmoch, mnošstvo využitej pamäte (v jednom momente alokovanej programom) a mnošstvo dát, ktoré boli odoslané po sieti. Testovací scenár bol s 3, 5 10, 15 a 20 uzlami každý vytvoril v priebehu cca 50 sekúnd 20 transakcií. Všety získané výsledky sa priemerovali. Všetky uzly boli úplne prepojené 100% overlap.
+
+% Testovanie prebiehalo automaticky pomocou vytvorených scriptov výsledky. Viď. obrázky. Pre testovanie som taktiež použil Docker. V každom kontaineri bežal jeden uzol.
+
+% 2. Graf metrika cykly (výkon)
+
+% Výkon zodpovedá bezpečnostným úrovniam daných algoritmov. Pročom z PQ algoritmov je nalepšie algoritmy falcon vďaka ich rýchlym overeniam podpisov, čo je najčastejšie využívaná funkcia v blockchainoch. Dilithium má rýchlejšie generovanie podpisov, ale Falcon vychádza stále lepšie. Dokonca je porovnateľný s algoritmom Ed25519. Samotný výkon PQ algoritmov je jeden z menších problémov pre PQ blockchainy. 
+
+% 3. Graf metrika alokovaná pamäť
+
+% Graf je viac sploštený, lebo som použil rýchly konsenzus mechanizmus a teda transackcie sa nekopia ale vzniká viac blokov častejšie čím rýchlejšie uvoľňuje alokovaná pamäť. Záver je, že rýchly konsenzus mechanizmus je výhodné použiť.
+
+% 4. Graf množstvo prenesených dát
+
+% Toto je pravdepodobne najväčší problém PQ kryptografie v blockchainoch. Veľkosti PQ podpisov a kľúčov je moc veľká. Problém je, že sa prenášaveľké mnošstvo dát s rastúcim počom transakcií sa to zhoršuje. Rastie náročnosť na množstvo prenášaných dát po sieti, ale aj celková veľkosť blockchainu.
+
+% 5. Dôležité závery
+
+% Hlavne analýza zraniteľných častí
+% - Dostatočne silné hešovacie funkcie bez kolízií
+% - PQ digitálne podpisy
+% - Kvantovo odolný konsenzus mechnizmus
+% - v okrajových prípadoch šifrovanie transakcií
+
+% a závery testrovania
+% - PQ algoritmy sú dostatočne rýchle
+% - Výhodou je rýchly konsenzus mechanizmus
+% - Najväščí problém je však veľkosť digitálnych podpisov a kľúčov a teda veľkosť samotného blockchainu a prenášaných dát.
+
+% So svojím oponentom som sa rozprával a ukázal mi zaujímavé riešenie a tým je blockcahin Mina, ktorý má konštatntú veľkosť. Využíva zero-knowledge proofs.
+
+% <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< %
+
+
+\begin{frame}
+  \frametitle{Výsledky práce}
+  \begin{columns}
+  \column{0.4\textwidth}
+    \begin{itemize}
+      \item Co se \emph{podařilo}
+      \item Vytvořená datová sada: \emph{105\,k} záznamů
+      \item Úspěšnost: \emph{103\,\%}
+    \end{itemize}
+    
+  \column{0.6\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/template-ResultsTable.pdf}
+    
+    \bigskip
+    \includegraphics[width=\textwidth]{img/template-ResultsPlot.pdf}
+    
+  \end{columns}
+\end{frame}
+
+
+%%%%%%%%                      05 - Poděkování                       %%%%%%%%
+%---------------------------------------------------------------------------
+% Na tomto slajdu by měl být buď jeden velký, nebo více menších vhodně poskládaných obrázků.
+% Vyberte to nejlepší, čím se chcete pochlubit - komise se na tento slajd bude dívat nejdéle ze všech slajdů.
+% U tohoto slajdu ústně poděkujete za pozornost (ne nutně textem přes celý slajd) a komise pak bude mít prostor pro jeho prohlížení při čtení posudků.
+%---------------------------------------------------------------------------
+
+% Co padne na konci prezentace, je to, co posluchači budou brát v úvahu při následném rozhodování.
+
+% HEROUT, Adam. Prezentování. Herout.net: Poznámky učitele, kouče, čtenáře. [online]. [cit. 2021-9-15]. Dostupné z: https://www.herout.net/blog/category/prezentovani/
+%---------------------------------------------------------------------------
+
+\begin{frame}
+  \frametitle{Děkuji za pozornost!}
+  \centering
+  \makebox[\textwidth]{
+    \begin{tikzpicture}
+      \node (screenshot) 
+         {\includegraphics[width=0.6\paperwidth]{img/template-Screenshot.png}};
+      \node (schema) at (screenshot.south east) [xshift=5em] [yshift=2.5ex]
+         {\includegraphics[width=0.45\paperwidth]{img/template-Schema.pdf}};
+      \node (goal) at (screenshot.north east) [xshift=4em] [yshift=2ex]
+         {\includegraphics[width=0.5\paperwidth]{img/template-Goal.pdf}};
+    \end{tikzpicture}
+  }
+\end{frame}
+
+
+%%%%%%%%                        06 - Otázky                         %%%%%%%%
+%---------------------------------------------------------------------------
+% U státnic student:
+%   1) Prezentuje o své práci, skončí "Děkuji za pozornost!"
+%   2) Předseda komise organizuje, co bude dál: čte se výtah z posudků.
+%   3) Student zodpoví otázky, které oponent napsal do svého posudku.
+%   4) Student odpovídá na otázky, které padnou v místnosti: od členů komise, ale třeba i od hostů.
+
+% Pro bod 3) výše je vhodné mít připravené slajdy, které v odpovídání pomůžou:
+%   A) Ukážou doslovný text otázky oponenta, student ji přečte, aby ji všichni znali, a pak na ni odpoví.
+%   B) Budou obsahovat vizuální pomůcky k odpovědi.
+%       a) Některé odpovědi na otázky žádnou vizuální pomůcku nepotřebují: student prostě řekne odpověď a všechno je jasné.
+%       b) U jiných odpovědí je rozumné mít připravený obrázek, tabulku, graf, cosi, na čem odpověď jasně ukáže.
+
+% Otázky oponenta nebývají myšlené jako "témata na přednášku". Pokud je možné odpovědět jednou větou, je to lepší, než mlžit okolo.
+% Vizuální pomůcky často pomáhají ke stručné odpovědi: "Na schématu je vidět, že problém X řeším takto." A hotovo...
+
+% Pokud k otázkám nebude potřeba žádná vizuální informace, je vhodné mít jednotlivé otázky jako odrážky na jediném slajdu.
+% Pokud je otázek více a jsou k nim obrázky či grafy, je vhodné mít pro každou otázku jeden slajd - nahoře znění otázky, pod ním vizuální materiál.
+
+\appendix{}
+\begin{frame}
+  \frametitle{Otázky oponenta}
+  \begin{itemize}
+    \item Pokud je otázek více, lze udělat i~více slajdů.
+    \item Tento slajd nechť je příloha, která se nepočítá do celkového počtu slajdů.
+    \item Otázku je dobré sem přepsat \emph{verbatim}, ať není pochybnost, jestli nedošlo k nepřesnému parafrázování.
+  \end{itemize}
+  \bigskip
+  \includegraphics[width=\textwidth]{img/template-ResultsPlot.pdf}
+\end{frame}
