@@ -4,8 +4,6 @@ This application is part of my Bachelor's thesis. For in-depth details, see the 
 
 This application works as a blockchain client. The idea was to create a blockchain that would use the new post-quantum cryptography and be resistant to quantum attacks. The main goal was to test the performance of post-quantum algorithms within a blockchain.
 
-**If you are interested in this topic join the discussion on the Discord server: [https://discord.gg/ryPBfPyJ](https://discord.gg/ryPBfPyJ)**
-
 ## Repository contents
 
 In other folders of this repository are additional README files, which provide a more in-depth explanation of their content.
